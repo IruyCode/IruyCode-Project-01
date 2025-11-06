@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $migrationsPath = database_path('migrations');
+
+        // Adiciona a pasta principal
+        $migrationDirs = [$migrationsPath];
+
+        // Busca todas as subpastas, em todos os níveis
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($migrationsPath, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST);
+
+        foreach ($iterator as $file) {
+            if ($file->isDir()) {
+                $migrationDirs[] = $file->getPathname();
+            }
+        }
+
+        // Carrega todas as pastas encontradas
+        foreach ($migrationDirs as $dir) {
+            $this->loadMigrationsFrom($dir);
+        }
     }
 }
