@@ -13,8 +13,11 @@ return new class extends Migration
     {
         Schema::create('app_bank_manager_account_balances', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id');
             $table->decimal('balance', 15, 2)->default(0); // Começa com 0
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
