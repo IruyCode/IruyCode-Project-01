@@ -19,16 +19,23 @@ class MakeModuleModelCommand extends Command
 
     public function handle()
     {
-        $module = Str::studly($this->argument('module'));
+        $rawModule = $this->argument('module');
+        $parts = explode('/', str_replace('\\', '/', $rawModule));
+
+        $module = Str::studly(array_shift($parts)); // primeiro nome sempre é o módulo
+        $subPath = collect($parts)->map(fn($p) => Str::studly($p))->implode('/');
+
         $name = Str::studly($this->argument('name'));
-        $basePath = app_path("Modules/{$module}/Models");
+
+        $basePath = app_path("Modules/{$module}/Models" . ($subPath ? "/{$subPath}" : ""));
+
 
         // cria pasta se não existir
         if (!is_dir($basePath)) {
             mkdir($basePath, 0777, true);
         }
 
-        $namespace = "App\\Modules\\{$module}\\Models";
+        $namespace = "App\\Modules\\{$module}\\Models" . ($subPath ? "\\" . str_replace('/', '\\', $subPath) : "");
         $filePath = "{$basePath}/{$name}.php";
 
         // evita sobrescrever
@@ -62,7 +69,7 @@ class MakeModuleModelCommand extends Command
         // Cria arquivos adicionais se solicitado
         if ($this->option('migration')) {
             Artisan::call('make:migration', [
-                'name' => "create_".Str::snake($name)."s_table",
+                'name' => "create_" . Str::snake($name) . "s_table",
                 '--path' => "database/migrations/{$module}"
             ]);
             $this->info("Migration criada para {$name}");
