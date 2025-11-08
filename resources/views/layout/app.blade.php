@@ -14,13 +14,19 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+<body x-data class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+    
     <!-- Header fixo -->
     @include('layout.partials.header')
 
     <!-- Espaço principal com padding top suficiente pro header fixo -->
     <main class="flex-grow pt-20 px-4 sm:px-6 lg:px-8">
+
+        <!-- ALERTS padronizados -->
+        @include('layout.partials.alerts')
+        <!-- Conteúdo principal -->
         @yield('content')
+
     </main>
 
     <!-- Footer fixo no fim -->

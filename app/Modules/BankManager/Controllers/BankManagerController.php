@@ -35,6 +35,7 @@ class BankManagerController extends Controller
         return view('bankmanager::index', [
             'accounts' => $accounts,
             'transactions' => $transactions,
+            'warning' => 'Operação criada com sucesso!',
         ]);
     }
 }
