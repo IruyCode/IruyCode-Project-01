@@ -3,34 +3,30 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'IruyCode')</title>
-
-    <!-- Alpine.js -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body x-data class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
-    
-    <!-- Header fixo -->
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+    {{-- Header --}}
     @include('layout.partials.header')
 
-    <!-- Espaço principal com padding top suficiente pro header fixo -->
-    <main class="flex-grow pt-20 px-4 sm:px-6 lg:px-8">
-
-        <!-- ALERTS padronizados -->
-        @include('layout.partials.alerts')
-        <!-- Conteúdo principal -->
-        @yield('content')
-
+    {{-- Conteúdo principal --}}
+    <main class="pt-20 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {{-- Cada bloco de conteúdo ocupará uma célula da grid --}}
+            @yield('content')
+        </div>
     </main>
 
-    <!-- Footer fixo no fim -->
+    {{-- Footer --}}
     @include('layout.partials.footer')
+
+    {{-- Scripts adicionais --}}
+    @stack('scripts')
 </body>
 
 </html>

@@ -1,4 +1,4 @@
-<h1>teste</h1>@extends('layout.app')
+@extends('layout.app')
 
 @section('content')
     <div class="w-full px-4 py-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
