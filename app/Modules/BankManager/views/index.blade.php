@@ -1,14 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layout.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Bank Manager</title>
-</head>
+@section('content')
 
-<body>
     <div class="max-w-6xl mx-auto p-6">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">💰 Bank Manager Dashboard</h1>
 
@@ -59,6 +52,4 @@
             </div>
         </div>
     </div>
-</body>
-
-</html>
+@endsection
