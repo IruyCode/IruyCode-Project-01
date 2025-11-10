@@ -19,97 +19,86 @@ class BankManagerSeeder extends Seeder
         $now = now();
 
         /* ==============================
-         *  Tipos de operação
+         *  Devedores principais
          * ============================== */
-        $incomeId = DB::table('app_bank_manager_operation_types')->insertGetId([
-            'operation_type' => 'income',
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        $expenseId = DB::table('app_bank_manager_operation_types')->insertGetId([
-            'operation_type' => 'expense',
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        /* ==============================
-         * Categorias
-         * ============================== */
-        $incomeCategories = [
-            'Salário',
-            'Renda extra',
-            'Metas_Income',
-            'Dívidas_Income',
-            'Devedores_Income',
-            'Investimentos_Income'
+        $debtors = [
+            [
+                'name' => 'João Pereira',
+                'description' => 'Empréstimo pessoal para compra de computador.',
+                'amount' => 1200.50,
+                'due_date' => Carbon::now()->addDays(10),
+                'is_paid' => false,
+                'paid_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Maria Silva',
+                'description' => 'Adiantamento de projeto de design.',
+                'amount' => 800.00,
+                'due_date' => Carbon::now()->subDays(5),
+                'is_paid' => false,
+                'paid_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Carlos Mendes',
+                'description' => 'Dívida antiga quitada parcialmente.',
+                'amount' => 500.00,
+                'due_date' => Carbon::now()->subDays(15),
+                'is_paid' => true,
+                'paid_at' => Carbon::now()->subDays(10),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Empresa XPTO Ltda.',
+                'description' => 'Serviço de consultoria ainda não pago.',
+                'amount' => 2300.00,
+                'due_date' => Carbon::now()->addDays(20),
+                'is_paid' => false,
+                'paid_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
         ];
 
-        $expenseCategories = [
-            'Metas_Expenses',
-            'Dívidas_Expenses',
-            'Devedores_Expenses',
-            'Investimentos_Expenses'
-        ];
-
-        foreach ($incomeCategories as $name) {
-            DB::table('app_bank_manager_operation_categories')->updateOrInsert(
-                ['name' => $name, 'operation_type_id' => $incomeId],
-                ['created_at' => $now, 'updated_at' => $now]
-            );
-        }
-
-        foreach ($expenseCategories as $name) {
-            DB::table('app_bank_manager_operation_categories')->updateOrInsert(
-                ['name' => $name, 'operation_type_id' => $expenseId],
-                ['created_at' => $now, 'updated_at' => $now]
-            );
-        }
+        DB::table('app_bank_manager_debtors')->insert($debtors);
 
         /* ==============================
-         *  Contas por usuário
+         *  Edições de valores e datas
          * ============================== */
-        $users = DB::table('users')->pluck('id');
+        $debtorsInserted = DB::table('app_bank_manager_debtors')->get();
 
-        foreach ($users as $userId) {
-            $accounts = [
-                ['user_id' => $userId, 'balance' => rand(500, 5000), 'created_at' => $now, 'updated_at' => $now],
-                ['user_id' => $userId, 'balance' => rand(1000, 8000), 'created_at' => $now, 'updated_at' => $now],
-            ];
-            DB::table('app_bank_manager_account_balances')->insert($accounts);
-        }
+        foreach ($debtorsInserted as $debtor) {
+            // Apenas alguns devedores terão histórico de edição
+            if (rand(0, 1) === 1 && !$debtor->is_paid) {
+                $oldAmount = $debtor->amount;
+                $newAmount = $oldAmount + rand(-100, 300); // pode subir ou descer um pouco
+                $oldDue = Carbon::parse($debtor->due_date);
+                $newDue = $oldDue->copy()->addDays(rand(2, 15));
 
-        /* ==============================
-         *  Transações (vinculadas às contas e categorias)
-         * ============================== */
-        $accounts = DB::table('app_bank_manager_account_balances')->get();
-        $categories = DB::table('app_bank_manager_operation_categories')->get();
-
-        foreach ($accounts as $account) {
-            // cria entre 5 e 10 transações por conta
-            $numTransactions = rand(5, 10);
-            for ($i = 0; $i < $numTransactions; $i++) {
-                $category = $categories->random();
-                $amount = rand(50, 1000);
-                $isIncome = DB::table('app_bank_manager_operation_types')
-                    ->where('id', $category->operation_type_id)
-                    ->value('operation_type') === 'income';
-
-                DB::table('app_bank_manager_transactions')->insert([
-                    'account_balance_id' => $account->id,
-                    'operation_category_id' => $category->id,
-                    'amount' => $amount,
-                    'created_at' => $now->copy()->subDays(rand(0, 30)),
+                DB::table('app_bank_manager_debtor_edits')->insert([
+                    'debtor_id' => $debtor->id,
+                    'old_amount' => $oldAmount,
+                    'new_amount' => $newAmount,
+                    'old_due_date' => $oldDue,
+                    'new_due_date' => $newDue,
+                    'reason' => 'Ajuste de valor e prazo para novo acordo.',
+                    'created_at' => $now,
                     'updated_at' => $now,
                 ]);
 
-                // atualiza saldo da conta
-                $account->balance += $isIncome ? $amount : -$amount;
+                // Atualiza o devedor principal
+                DB::table('app_bank_manager_debtors')
+                    ->where('id', $debtor->id)
+                    ->update([
+                        'amount' => $newAmount,
+                        'due_date' => $newDue,
+                        'updated_at' => $now,
+                    ]);
             }
-
-            DB::table('app_bank_manager_account_balances')
-                ->where('id', $account->id)
-                ->update(['balance' => $account->balance, 'updated_at' => $now]);
         }
     }
 }

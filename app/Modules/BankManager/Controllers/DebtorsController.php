@@ -37,9 +37,28 @@ class DebtorsController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function storeDebtor(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'amount' => 'required|numeric|min:0.01',
+            'due_date' => 'required|date',
+        ]);
+
+        // Verifica se existe um devedor com o mesmo nome
+        $exists = Debtor::where('name', $validated['name'])->exists();
+
+        if ($exists) {
+            return redirect()
+                ->back()
+                ->withErrors(['name' => 'Já existe um devedor com este nome.'])
+                ->withInput();
+        }
+
+        Debtor::create($validated);
+
+        return redirect()->back()->with('success', 'Devedor criado com sucesso.');
     }
 
     /**

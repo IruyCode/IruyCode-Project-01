@@ -7,6 +7,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 use Database\Seeders\BankManager\BankManagerSeeder;
+use Database\Seeders\BankManager\BankManagerDebtorSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,6 +20,9 @@ class DatabaseSeeder extends Seeder
     {
         User::factory(5)->create();
 
-        $this->call(BankManagerSeeder::class);
+        $this->call([
+            BankManagerSeeder::class,
+            BankManagerDebtorSeeder::class
+        ]);
     }
 }

@@ -1,44 +1,35 @@
 @extends('layout.app')
 
 @section('content')
-    <div class="w-full px-4 py-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-        <div class="container mx-auto">
+    <div x-data="{ showCreate: false }" class="w-full px-4 py-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
 
+        <div class="container mx-auto">
             <!-- Cabeçalho -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
-                        {{-- <svg class="w-6 h-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4 1.343 4 3-1.79 3-4 3" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20" />
-                        </svg> --}}
-                        Gestão de Devedores
+                        Gestão de Devedoressss
                     </h1>
                     <p class="text-gray-600 dark:text-gray-300">Lista de pessoas que devem valores</p>
                 </div>
 
-                {{-- @include('bankmanager::debtors._partials.add-modal') --}}
+                <!-- Botão abre modal -->
+                <button @click="showCreate = true"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Novo Devedor
+                </button>
             </div>
 
-            <!-- Tabela -->
-            {{-- @include('bankmanager::debtors._partials.debtors-table') --}}
+            <!-- Moda-create -->
+            @include('bankmanager::debtors.partials.modal-create')
 
-            <!-- Caso não haja registros -->
-            @if ($debtors->isEmpty())
-                <div class="text-center py-12">
-                    {{-- <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg> --}}
-                    <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">Nenhum devedor encontrado</h3>
-                    <p class="mt-1 text-gray-500 dark:text-gray-400">Adicione um novo devedor clicando no botão acima.</p>
-                </div>
-            @endif
+            <!-- Tabela de Devedores -->
+            @include('bankmanager::debtors.partials.debtors-table')
+
         </div>
     </div>
 @endsection
-
-{{-- @push('scripts')
-    @include('bankmanager::debtors._scripts')
-@endpush --}}

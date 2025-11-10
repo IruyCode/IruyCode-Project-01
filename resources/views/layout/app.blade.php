@@ -6,26 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'IruyCode')</title>
 
+    {{-- Vite assets --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Alpine.js + plugins --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" onload="
+            document.addEventListener('alpine:init', () => {
+                // Store global para controlar modais
+                Alpine.store('modal', {
+                    current: null,
+                    open(name) { this.current = name },
+                    close() { this.current = null },
+                    is(name) { return this.current === name }
+                });
+            });
+        "></script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-    {{-- Header --}}
+    <!-- Header global -->
     @include('layout.partials.header')
 
-    {{-- Conteúdo principal --}}
-    <main class="pt-20 min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {{-- Cada bloco de conteúdo ocupará uma célula da grid --}}
+    <!-- Conteúdo principal -->
+    <main class="pt-20 min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {{-- Mensagens globais (sucesso, erro etc.) --}}
+            @include('layout.partials.alerts')
+
+            {{-- Conteúdo dinâmico --}}
             @yield('content')
         </div>
     </main>
 
-    {{-- Footer --}}
+    <!-- Footer -->
     @include('layout.partials.footer')
 
-    {{-- Scripts adicionais --}}
+    {{-- Scripts adicionais empilhados por módulos --}}
     @stack('scripts')
 </body>
 
