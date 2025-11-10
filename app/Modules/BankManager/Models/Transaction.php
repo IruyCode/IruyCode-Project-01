@@ -11,7 +11,7 @@ class Transaction extends Model
 
     protected $table = 'app_bank_manager_transactions';
 
-    protected $fillable = ['operation_category_id', 'amount'];
+    protected $fillable = ['operation_category_id', 'amount', 'account_balance_id'];
 
     public function operationCategory()
     {
