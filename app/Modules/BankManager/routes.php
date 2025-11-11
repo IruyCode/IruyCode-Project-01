@@ -3,14 +3,17 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Modules\BankManager\Controllers\TransactionController;
+
 use App\Modules\BankManager\Controllers\BankManagerController;
 use App\Modules\BankManager\Controllers\DebtorsController;
+use App\Modules\BankManager\Controllers\DebtsController;
 
 
 
 Route::prefix('bank-manager')
     ->name('bank-manager.')
     ->group(function () {
+
         Route::get('/', [BankManagerController::class, 'index'])->name('index');
 
         Route::prefix('debtors')
@@ -25,4 +28,19 @@ Route::prefix('bank-manager')
                 Route::post('/{debtor}/adjust-value', 'adjustValueDebtor')->name('adjust-value');
             });
             
+        Route::prefix('debts')
+            ->name('debts.')
+            ->controller(DebtsController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/storeDebt', 'storeDebt')->name('store');
+                Route::delete('/{debt}/destroyDebt', 'deleteDebt')->name('destroy');
+                Route::post('/{debt}/editDebt', 'editDebt')->name('edit');
+                Route::post('/{installmentId}/installments/mark-paid', 'markInstallmentAsPaid')->name('installments.markPaid');
+
+                Route::put('/{debt}/pay-multiples', 'payMultipleInstallments')->name('debts.pay-multiples');
+
+                Route::post('/{debt}/finish', 'finishDebt')->name('finish');
+                Route::put('/{debt}/adjust', 'adjustDebtValue')->name('adjust');
+            });
     });
