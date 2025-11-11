@@ -1,6 +1,7 @@
-@extends('layout.app')
+@extends('bankmanager::dashboard')
 
-@section('content')
+@section('content-component')
+
     <div x-data="{
         showCreate: false,
         activeModal: null,

@@ -1,6 +1,6 @@
-@extends('layout.app')
+@extends('bankmanager::dashboard')
 
-@section('content')
+@section('content-component')
     <div x-data="debtManager()" class="w-full px-4 py-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
         <div class="container mx-auto">
 

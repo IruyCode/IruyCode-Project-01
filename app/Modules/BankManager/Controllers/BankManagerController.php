@@ -32,10 +32,10 @@ class BankManagerController extends Controller
             ->get();
 
         // Retorna a view com os dados, ao usar o bankmanager::index e nao o bankmanager.index , ele busco a view no Modulo indicado e nao na pasta resources/views
-        return view('bankmanager::bank-manager-index', [
+        return view('bankmanager::dashboard', [
             'accounts' => $accounts,
             'transactions' => $transactions,
-            'warning' => 'Operação criada com sucesso!',
+            // 'warning' => 'Operação criada com sucesso!',
         ]);
     }
 }
