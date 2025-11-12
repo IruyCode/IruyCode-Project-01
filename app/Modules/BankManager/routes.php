@@ -7,6 +7,7 @@ use App\Modules\BankManager\Controllers\TransactionController;
 use App\Modules\BankManager\Controllers\BankManagerController;
 use App\Modules\BankManager\Controllers\DebtorsController;
 use App\Modules\BankManager\Controllers\DebtsController;
+use App\Modules\BankManager\Controllers\GoalController;
 
 
 
@@ -27,7 +28,7 @@ Route::prefix('bank-manager')
                 Route::post('/{debtor}/conclude', 'concludeDebtor')->name('conclude');
                 Route::post('/{debtor}/adjust-value', 'adjustValueDebtor')->name('adjust-value');
             });
-            
+
         Route::prefix('debts')
             ->name('debts.')
             ->controller(DebtsController::class)
@@ -42,5 +43,17 @@ Route::prefix('bank-manager')
 
                 Route::post('/{debt}/finish', 'finishDebt')->name('finish');
                 Route::put('/{debt}/adjust', 'adjustDebtValue')->name('adjust');
+            });
+
+        Route::prefix('goals')
+            ->name('goals.')
+            ->controller(GoalController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'storeFinancialGoal')->name('store');
+                Route::put('/{goal}', 'updateGoal')->name('update');
+                Route::delete('/{goal}', 'destroyGoal')->name('destroy');
+                Route::post('/{goal}/finish', 'finishGoal')->name('finish');
+                Route::put('/{goal}/adjust', 'adjustGoalValue')->name('adjust');
             });
     });

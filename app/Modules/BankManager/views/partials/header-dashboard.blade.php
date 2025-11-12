@@ -7,16 +7,16 @@
          <nav class="flex items-center space-x-8">
 
              <!-- Metas -->
-             {{-- <a href="{{ route('bank-manager.goals.index') }}"
+             <a href="{{ route('bank-manager.goals.index') }}"
                  class="flex items-center h-full px-2 font-medium transition duration-300
                         {{ Route::is('bank-manager.goals.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900' }}">
                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                      <circle cx="12" cy="12" r="10" />
                      <circle cx="12" cy="12" r="6" />
                      <circle cx="12" cy="12" r="2" />
-                 </svg>
+                    </svg>
                  Metas
-             </a> --}}
+             </a>
 
              <!-- Dívidas -->
              <a href="{{ route('bank-manager.debts.index') }}"
