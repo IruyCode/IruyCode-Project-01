@@ -8,7 +8,7 @@ use App\Modules\BankManager\Controllers\BankManagerController;
 use App\Modules\BankManager\Controllers\DebtorsController;
 use App\Modules\BankManager\Controllers\DebtsController;
 use App\Modules\BankManager\Controllers\GoalController;
-
+use App\Modules\BankManager\Controllers\InvestmentController;
 
 
 Route::prefix('bank-manager')
@@ -55,5 +55,18 @@ Route::prefix('bank-manager')
                 Route::delete('/{goal}', 'destroyGoal')->name('destroy');
                 Route::post('/{goal}/finish', 'finishGoal')->name('finish');
                 Route::put('/{goal}/adjust', 'adjustGoalValue')->name('adjust');
+            });
+
+        Route::prefix('investments')
+            ->name('investments.')
+            ->controller(InvestmentController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/storeInvestment', 'storeInvestment')->name('store');
+                Route::post('/{investment}/edit', 'editInvestment')->name('edit');
+                Route::delete('/{investment}', 'deleteInvestment')->name('destroy');
+
+                Route::post('/{investment}/apply-cashflow', 'applyCashflow')->name('applyCashflow');
+                Route::post('/{investment}/apply-market-update', 'applyMarketUpdate')->name('applyMarketUpdate');
             });
     });

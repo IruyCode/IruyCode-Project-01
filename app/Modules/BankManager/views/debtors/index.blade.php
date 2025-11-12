@@ -1,4 +1,4 @@
-@extends('bankmanager::dashboard')
+@extends('bankmanager::app')
 
 @section('content-component')
 

@@ -22,4 +22,9 @@ class Transaction extends Model
     {
         return $this->belongsTo(AccountBalance::class, 'account_balance_id');
     }
+
+      public function description()
+    {
+        return $this->hasOne(TransactionDescription::class, 'transaction_id');
+    }
 }

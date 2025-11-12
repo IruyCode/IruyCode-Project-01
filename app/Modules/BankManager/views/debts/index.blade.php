@@ -1,4 +1,4 @@
-@extends('bankmanager::dashboard')
+@extends('bankmanager::app')
 
 @section('content-component')
     <div x-data="debtManager()" class="w-full px-4 py-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
