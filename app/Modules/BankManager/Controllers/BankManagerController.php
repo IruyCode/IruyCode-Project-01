@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Validator;
 
 use App\Modules\BankManager\Models\AccountBalance;
 
+use App\Modules\BankManager\Models\OperationCategory;
+use App\Modules\BankManager\Models\OperationType;
+use App\Modules\BankManager\Models\Transaction;
+use App\Modules\BankManager\Models\TransactionDescription;
+
 
 
 class BankManagerController extends Controller
@@ -114,6 +119,20 @@ class BankManagerController extends Controller
 
     public function index()
     {
+        $operationTypes = OperationType::all();
+        $operationCategories = OperationCategory::all();
+
+        $operationCategoriesFilter = OperationCategory::all()
+            ->filter(fn($c) => !str_ends_with($c->name, '_Income') && !str_ends_with($c->name, '_Expenses'))
+            ->values() // reorganiza índices
+            ->map(
+                fn($c) => [
+                    'id' => $c->id,
+                    'operation_type_id' => $c->operation_type_id,
+                    'name' => $c->name,
+                ],
+            );
+
         $userId = Auth::id();
 
         // 1. Obter todas as contas ativas do utilizador
@@ -141,12 +160,71 @@ class BankManagerController extends Controller
             ->get();
 
         // Retorna a view com os dados
-        return view('bankmanager::index', [
+        return view('bankmanager::dashboard.index', [
             'accounts' => $accounts,
             'transactions' => $transactions,
             'totalBalance' => $totalBalance,
             'personalBalance' => $personalBalance,
             'businessBalance' => $businessBalance,
+            'operationTypes' => $operationTypes,
+            'operationCategories' => $operationCategories,
+            'operationCategoriesFilter' => $operationCategoriesFilter,
         ]);
+    }
+
+    public function storeOperationCategory(Request $request)
+    {
+        $request->validate([
+            'operation_type' => 'required|in:income,expense',
+            'name' => 'required|string|max:255',
+        ]);
+
+        // Procura o tipo correto (income ou expense) na tabela de tipos
+        $operationType = OperationType::where('operation_type', $request->operation_type)->first();
+
+        if (!$operationType) {
+            return redirect()->back()->withErrors('Tipo de operação não encontrado.')->withInput();
+        }
+
+        // Agora cria a categoria
+        OperationCategory::create([
+            'operation_type_id' => $operationType->id,
+            'name' => $request->name,
+        ]);
+
+        return redirect()->back()->with('success', 'Categoria criada com sucesso!');
+    }
+
+    public function storeTransaction(Request $request)
+    {
+        $request->validate([
+            'account_balance_id' => 'required|exists:app_bank_manager_account_balances,id',
+            'operation_category_id' => 'required|exists:app_bank_manager_operation_categories,id',
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        $category = OperationCategory::with('operationType')->findOrFail($request->operation_category_id);
+
+        $type = $category->operationType->operation_type; // 'income' ou 'expense'
+
+        // Cria a transação
+        Transaction::create([
+            'account_balance_id' => $request->account_balance_id,
+            'operation_category_id' => $request->operation_category_id,
+            'amount' => $request->amount,
+        ]);
+
+        // Atualiza o saldo
+        $balance = AccountBalance::where('user_id', Auth::id())->findOrFail($request->account_balance_id);
+
+        if ($type === 'income') {
+            $balance->current_balance += $request->amount;
+        } elseif ($type === 'expense') {
+            $balance->current_balance -= $request->amount;
+        }
+
+        $balance->save();
+
+        return redirect()->back()->with('success', 'Transação registrada com sucesso!');
     }
 }

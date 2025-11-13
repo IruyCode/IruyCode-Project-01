@@ -17,6 +17,10 @@ Route::prefix('bank-manager')
 
         Route::get('/', [BankManagerController::class, 'index'])->name('index');
 
+        Route::post('/operation-categories', [BankManagerController::class, 'storeOperationCategory'])->name('operation-categories.store');
+           Route::post('/bank-manager/transactions', [BankManagerController::class, 'storeTransaction'])->name('transactions.store');
+
+
         Route::prefix('debtors')
             ->name('debtors.')
             ->controller(DebtorsController::class)
