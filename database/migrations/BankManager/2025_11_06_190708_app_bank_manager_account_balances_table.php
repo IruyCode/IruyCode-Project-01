@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('app_bank_manager_account_balances', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->decimal('balance', 15, 2)->default(0); // Começa com 0
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('account_name');
+            $table->string('bank_name');
+            $table->decimal('current_balance', 15, 2)->default(0.00);
+            $table->enum('account_type', ['personal', 'business'])->default('personal');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

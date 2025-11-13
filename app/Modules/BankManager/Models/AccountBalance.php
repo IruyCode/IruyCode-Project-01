@@ -11,5 +11,17 @@ class AccountBalance extends Model
 
     protected $table = 'app_bank_manager_account_balances';
 
-    protected $fillable = ['balance', 'user_id'];
+    protected $fillable = [
+        'user_id',
+        'account_name',
+        'bank_name',
+        'current_balance',
+        'account_type',
+        'is_active',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }

@@ -69,4 +69,15 @@ Route::prefix('bank-manager')
                 Route::post('/{investment}/apply-cashflow', 'applyCashflow')->name('applyCashflow');
                 Route::post('/{investment}/apply-market-update', 'applyMarketUpdate')->name('applyMarketUpdate');
             });
+
+        // Account Balances Routes
+        Route::prefix('account-balances')
+            ->name('account-balances.')
+            ->controller(BankManagerController::class)
+            ->group(function () {
+                Route::get('/', 'accountBalances')->name('index');
+                Route::post('/', 'storeAccountBalance')->name('store');
+                Route::put('/{id}', 'updateAccountBalance')->name('update');
+                Route::delete('/{id}', 'deleteAccountBalance')->name('delete');
+            });
     });
