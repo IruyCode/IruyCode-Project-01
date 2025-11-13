@@ -18,11 +18,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory(5)->create();
+        // User::factory(5)->create();
 
         $this->call([
             BankManagerSeeder::class,
-            BankManagerDebtorSeeder::class
+            BankManagerDebtorSeeder::class,
+            UserSeeder::class
         ]);
     }
 }
