@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('app_bank_manager_transaction_descriptions', function (Blueprint $table) {
+        Schema::create('app_bank_manager_operation_sub_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('transaction_id')->constrained('app_bank_manager_transactions')->onDelete('cascade');
-
-            $table->string('description'); // Ex: "Tesouro Selic (Investimentos_Expenses)"
-
+            $table->foreignId('operation_category_id')
+                ->constrained('app_bank_manager_operation_categories', 'id', indexName: 'op_subcat_cat_fk')
+                ->onDelete('cascade');
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('app_bank_manager_transaction_descriptions');
+        Schema::dropIfExists('app_bank_manager_operation_sub_categories');
     }
 };

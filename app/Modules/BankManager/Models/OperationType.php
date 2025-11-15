@@ -16,9 +16,8 @@ class OperationType extends Model
         'description',
     ];
 
-    // Relacionamento: Um tipo de operação pode ter várias categorias
-    public function categories()
+    public function transactions()
     {
-        return $this->hasMany(OperationCategory::class, 'operation_type_id');
+        return $this->hasMany(Transaction::class, 'operation_type_id');
     }
 }

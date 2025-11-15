@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('app_bank_manager_transactions', function (Blueprint $table) {
             $table->id();
+            $table->string('description')->nullable();
             $table->foreignId('account_balance_id')->constrained('app_bank_manager_account_balances')->onDelete('cascade');
-            $table->foreignId('operation_category_id')->constrained('app_bank_manager_operation_categories')->onDelete('cascade');
-            $table->decimal('amount', 10, 2); // até 99999999.99
+            $table->foreignId('operation_type_id')->constrained('app_bank_manager_operation_types')->onDelete('cascade');
+            $table->foreignId('operation_sub_category_id')->constrained('app_bank_manager_operation_sub_categories')->onDelete('cascade');
+            $table->decimal('amount', 10, 2); 
             $table->timestamps();
         });
     }

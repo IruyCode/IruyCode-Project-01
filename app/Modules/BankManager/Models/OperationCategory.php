@@ -11,15 +11,17 @@ class OperationCategory extends Model
 
     protected $table = 'app_bank_manager_operation_categories';
 
-    protected $fillable = ['operation_type_id', 'name'];
+    protected $fillable = ['name'];
 
-    public function operationType()
-    {
-        return $this->belongsTo(OperationType::class, 'operation_type_id');
-    }
+ 
 
     public function transactions()
     {
         return $this->hasMany(Transaction::class, 'operation_category_id');
+    }
+
+    public function subCategories()
+    {
+        return $this->hasMany(OperationSubCategory::class, 'operation_category_id');
     }
 }

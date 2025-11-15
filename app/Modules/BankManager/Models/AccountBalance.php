@@ -24,4 +24,9 @@ class AccountBalance extends Model
     {
         return $this->belongsTo(\App\Models\User::class);
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'account_balance_id');
+    }
 }

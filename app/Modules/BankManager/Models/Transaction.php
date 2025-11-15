@@ -11,11 +11,11 @@ class Transaction extends Model
 
     protected $table = 'app_bank_manager_transactions';
 
-    protected $fillable = ['operation_category_id', 'amount', 'account_balance_id'];
+    protected $fillable = ['operation_sub_category_id', 'account_balance_id','operation_type_id', 'description', 'amount'];
 
-    public function operationCategory()
+    public function operationSubCategory()
     {
-        return $this->belongsTo(OperationCategory::class, 'operation_category_id');
+        return $this->belongsTo(OperationSubCategory::class, 'operation_sub_category_id');
     }
 
     public function accountBalance()
@@ -23,8 +23,8 @@ class Transaction extends Model
         return $this->belongsTo(AccountBalance::class, 'account_balance_id');
     }
 
-      public function description()
+    public function operationType()
     {
-        return $this->hasOne(TransactionDescription::class, 'transaction_id');
+        return $this->belongsTo(OperationType::class, 'operation_type_id');
     }
 }
