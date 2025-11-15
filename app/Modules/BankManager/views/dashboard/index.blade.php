@@ -1,7 +1,6 @@
 @extends('bankmanager::app')
 
 @section('content-component')
-
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
 
         <!-- Saldo Total Consolidado -->
@@ -119,55 +118,6 @@
 
     @include('bankmanager::dashboard.partials.actions-categories')
 
-    {{-- <!-- Últimas Transações -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow">
-        <div class="px-6 py-4 border-b dark:border-gray-700">
-            <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Últimas Transações</h3>
-        </div>
+   @include('bankmanager::dashboard.partials.dataTables')
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-100 dark:bg-gray-700/50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs uppercase text-gray-600 dark:text-gray-300">Descrição
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs uppercase text-gray-600 dark:text-gray-300">Categoria
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs uppercase text-gray-600 dark:text-gray-300">Valor</th>
-                        <th class="px-4 py-3 text-left text-xs uppercase text-gray-600 dark:text-gray-300">Data</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse ($transactions as $transaction)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                            <!-- <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ $transaction->description }}
-                            </td> -->
-                            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $transaction->category_name }}
-                            </td>
-
-                            <td
-                                class="px-4 py-3 font-semibold
-                            {{ $transaction->value < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                € {{ number_format($transaction->value, 2, ',', '.') }}
-                            </td>
-
-                            <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
-                                {{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y H:i') }}
-                            </td>
-                        </tr>
-
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-6 py-6 text-center text-gray-500 dark:text-gray-400">
-                                Nenhuma transação recente.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div> --}}
-
-    
 @endsection

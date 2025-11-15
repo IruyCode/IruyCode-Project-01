@@ -6,22 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'IruyCode')</title>
 
+    <!-- Tema Bootstrap 5 escuro -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/datatables.bootstrap5.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+    <!-- DataTables Core CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
     {{-- Vite assets --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Alpine.js + plugins --}}
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" onload="
-            document.addEventListener('alpine:init', () => {
-                // Store global para controlar modais
-                Alpine.store('modal', {
-                    current: null,
-                    open(name) { this.current = name },
-                    close() { this.current = null },
-                    is(name) { return this.current === name }
-                });
-            });
-        "></script>
+                    document.addEventListener('alpine:init', () => {
+                        // Store global para controlar modais
+                        Alpine.store('modal', {
+                            current: null,
+                            open(name) { this.current = name },
+                            close() { this.current = null },
+                            is(name) { return this.current === name }
+                        });
+                    });
+                "></script>
 
     <style>
         [x-cloak] {

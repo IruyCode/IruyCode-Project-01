@@ -11,14 +11,18 @@ use App\Modules\BankManager\Controllers\GoalController;
 use App\Modules\BankManager\Controllers\InvestmentController;
 
 
+
+
 Route::prefix('bank-manager')
     ->name('bank-manager.')
     ->group(function () {
 
+        Route::get('/api/receiveDataTableTransactions', [BankManagerController::class, 'receiveAllTransactions']);
+        
         Route::get('/', [BankManagerController::class, 'index'])->name('index');
 
         Route::post('/operation-categories', [BankManagerController::class, 'storeOperationCategory'])->name('operation-categories.store');
-           Route::post('/bank-manager/transactions', [BankManagerController::class, 'storeTransaction'])->name('transactions.store');
+        Route::post('/bank-manager/transactions', [BankManagerController::class, 'storeTransaction'])->name('transactions.store');
 
 
         Route::prefix('debtors')

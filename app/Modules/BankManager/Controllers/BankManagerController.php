@@ -14,7 +14,10 @@ use App\Modules\BankManager\Models\OperationCategory;
 use App\Modules\BankManager\Models\OperationType;
 use App\Modules\BankManager\Models\Transaction;
 use App\Modules\BankManager\Models\TransactionDescription;
+use App\Modules\BankManager\Models\FixedExpense\FixedExpense;
 
+use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 
 class BankManagerController extends Controller
@@ -226,5 +229,107 @@ class BankManagerController extends Controller
         $balance->save();
 
         return redirect()->back()->with('success', 'Transação registrada com sucesso!');
+    }
+
+    public function receiveAllTransactions(Request $request)
+    {
+        $tz = config('app.timezone', 'Europe/Lisbon');
+        $now = Carbon::now($tz);
+
+        // Filtro padrão: mês atual
+        $defaultMonth = $now->month;
+        $defaultYear = $now->year;
+
+        $query = Transaction::with(['operationCategory.operationType', 'description'])->select('app_bank_manager_transactions.*');
+
+        // Se o front não enviar "month", usamos o mês atual
+        $year = (int) ($request->year ?? $defaultYear);
+        $month = (int) ($request->month ?? $defaultMonth);
+
+        //  Filtro base (sempre restringe ao mês em questão)
+        $query->whereMonth('created_at', $month)->whereYear('created_at', $year);
+
+        // Se também tiver semana
+        if ($request->filled('week')) {
+            $startOfMonth = now()->setYear($year)->setMonth($month)->startOfMonth();
+            $week = (int) $request->week;
+
+            $weekStart = $startOfMonth->copy()->addDays(($week - 1) * 7);
+            $weekEnd = $weekStart->copy()->addDays(6)->endOfDay();
+
+            $endOfMonth = $startOfMonth->copy()->endOfMonth();
+            if ($weekEnd->gt($endOfMonth)) {
+                $weekEnd = $endOfMonth;
+            }
+
+            $query->whereBetween('created_at', [$weekStart, $weekEnd]);
+
+            // Se também tiver dia
+            if ($request->filled('day')) {
+                $query->whereDay('created_at', (int) $request->day);
+            }
+        }
+
+        // Filtro por tipo (mantém tua lógica)
+        if ($request->filled('tipo')) {
+            $tipo = $request->tipo;
+
+            $query->whereHas('operationCategory', function ($q) use ($tipo) {
+                if ($tipo === 'Despesa Fixa') {
+                    $q->where('name', 'like', '%Fixed_Expenses%');
+                } elseif ($tipo === 'Investimento') {
+                    $q->where('name', 'like', '%Investimentos%');
+                } elseif ($tipo === 'Meta') {
+                    $q->where('name', 'like', '%Metas%');
+                } elseif ($tipo === 'Receita') {
+                    $q->where('name', 'like', '%Income%');
+                } elseif ($tipo === 'Despesa') {
+                    $q->where('name', 'like', '%Expenses%');
+                } elseif ($tipo === 'Despesa Comum') {
+                    // Exclui os tipos especiais
+                    $q->whereNotIn('name', ['Fixed_Expenses', 'Investimentos_Expenses', 'Metas_Expenses', 'Investimentos_Income', 'Metas_Income']);
+                }
+            });
+        }
+
+        return DataTables::eloquent($query)
+            ->addColumn('real_category_name', function ($transaction) {
+                if ($transaction->operationCategory?->name === 'Fixed_Expenses') {
+                    $fixedExpense = FixedExpense::where('amount', $transaction->amount)
+                        ->where('operation_category_id', $transaction->operation_category_id)
+                        ->whereDate('created_at', $transaction->created_at->toDateString())
+                        ->first();
+
+                    return $fixedExpense?->name . ' (Fixed_Expenses)' ?? 'Despesa Fixa';
+                }
+
+                return $transaction->description?->description ?? ($transaction->operationCategory->name ?? 'Sem categoria');
+            })
+
+            ->addColumn('formatted_amount', function ($transaction) {
+                $type = $transaction->operationCategory?->operationType?->operation_type ?? 'unknown';
+                $sign = $type === 'income' ? '+ ' : '- ';
+                $color = $type === 'income' ? 'style="color: green; font-weight: bold;"' : 'style="color: red; font-weight: bold;"';
+
+                return "<span {$color}>{$sign}€ " . number_format($transaction->amount, 2, ',', '.') . '</span>';
+            })
+            ->addColumn('formatted_date', fn($t) => $t->created_at->format('d/m/Y'))
+
+            ->addColumn('tipo', function ($t) {
+                $name = $t->operationCategory?->name ?? '';
+                return match (true) {
+                    str_contains($name, 'Fixed_Expenses') => 'Despesa Fixa',
+                    str_contains($name, 'Investimentos') => 'Investimento',
+                    str_contains($name, 'Metas') => 'Meta',
+                    str_contains($name, 'Income') => 'Receita',
+                    str_contains($name, 'Expenses') => 'Despesa',
+                    default => 'Despesa Comum',
+                };
+            })
+            ->filterColumn('real_category_name', function ($query, $keyword) {
+                $query->whereHas('operationCategory', fn($q) => $q->where('name', 'like', "%{$keyword}%"))->orWhereHas('description', fn($q) => $q->where('description', 'like', "%{$keyword}%"));
+            })
+            ->rawColumns(['formatted_amount'])
+            ->make(true);
     }
 }
