@@ -9,20 +9,36 @@ use App\Modules\BankManager\Controllers\DebtorsController;
 use App\Modules\BankManager\Controllers\DebtsController;
 use App\Modules\BankManager\Controllers\GoalController;
 use App\Modules\BankManager\Controllers\InvestmentController;
-
-
+use App\Modules\BankManager\Controllers\DashboardController;
 
 
 Route::prefix('bank-manager')
     ->name('bank-manager.')
     ->group(function () {
 
+        //API routes
         Route::get('/api/receiveDataTableTransactions', [BankManagerController::class, 'receiveAllTransactions']);
-        
-        Route::get('/', [BankManagerController::class, 'index'])->name('index');
+        Route::get('/api/subcategories/{category}', [BankManagerController::class, 'getSubcategories']);
 
+        // View Settings
+        Route::get('/settings', [BankManagerController::class, 'settings'])->name('settings');
+
+        // View Dashboard
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+
+        // Transactions Routes
+        Route::post('/transactions', [BankManagerController::class, 'storeTransaction'])->name('transactions.store');
+
+        // Categories and Subcategories Routes - Creation
         Route::post('/operation-categories', [BankManagerController::class, 'storeOperationCategory'])->name('operation-categories.store');
-        Route::post('/bank-manager/transactions', [BankManagerController::class, 'storeTransaction'])->name('transactions.store');
+        Route::post('/operation-subcategories', [BankManagerController::class, 'storeOperationSubCategory'])->name('operation-subcategories.store');
+        // Categories and Subcategories Routes - Update
+        Route::post('/categories/update/{id}', [BankManagerController::class, 'updateCategory'])->name('bank-manager.category.update');
+        Route::post('/subcategories/update/{id}', [BankManagerController::class, 'updateSubCategory'])->name('bank-manager.subcategory.update');
+
+        Route::post('/categories/delete/{id}', [BankManagerController::class, 'deleteCategory']);
+        Route::post('/subcategories/delete/{id}', [BankManagerController::class, 'deleteSubCategory']);
+
 
 
         Route::prefix('debtors')

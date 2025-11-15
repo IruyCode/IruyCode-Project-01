@@ -15,6 +15,7 @@ use App\Modules\BankManager\Models\OperationType;
 use App\Modules\BankManager\Models\Transaction;
 use App\Modules\BankManager\Models\TransactionDescription;
 use App\Modules\BankManager\Models\FixedExpense\FixedExpense;
+use App\Modules\BankManager\Models\OperationSubCategory;
 
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
@@ -22,35 +23,6 @@ use Carbon\Carbon;
 
 class BankManagerController extends Controller
 {
-    // public function index()
-    // {
-    //     // Carrega os dados principais do módulo
-    //     $accounts = DB::table('app_bank_manager_account_balances')
-    //         ->join('users', 'users.id', '=', 'app_bank_manager_account_balances.user_id')
-    //         ->select(
-    //             'app_bank_manager_account_balances.*',
-    //             'users.name as user_name'
-    //         )
-    //         ->get();
-
-    //     $transactions = DB::table('app_bank_manager_transactions')
-    //         ->join('app_bank_manager_operation_categories', 'app_bank_manager_operation_categories.id', '=', 'app_bank_manager_transactions.operation_category_id')
-    //         ->join('app_bank_manager_account_balances', 'app_bank_manager_account_balances.id', '=', 'app_bank_manager_transactions.account_balance_id')
-    //         ->select(
-    //             'app_bank_manager_transactions.*',
-    //             'app_bank_manager_operation_categories.name as category_name',
-    //             'app_bank_manager_account_balances.user_id'
-    //         )
-    //         ->orderByDesc('app_bank_manager_transactions.created_at')
-    //         ->limit(10)
-    //         ->get();
-
-    //     // Retorna a view com os dados, ao usar o bankmanager::index e nao o bankmanager.index , ele busco a view no Modulo indicado e nao na pasta resources/views
-    //     return view('bankmanager::app', [
-    //         'accounts' => $accounts,
-    //         'transactions' => $transactions,
-    //     ]);
-    // }
 
     public function accountBalances()
     {
@@ -120,216 +92,281 @@ class BankManagerController extends Controller
         return redirect()->route('bank-manager.account-balances.index')->with('success', 'Conta bancária eliminada com sucesso!');
     }
 
-    public function index()
-    {
-        $operationTypes = OperationType::all();
-        $operationCategories = OperationCategory::all();
-
-        $operationCategoriesFilter = OperationCategory::all()
-            ->filter(fn($c) => !str_ends_with($c->name, '_Income') && !str_ends_with($c->name, '_Expenses'))
-            ->values() // reorganiza índices
-            ->map(
-                fn($c) => [
-                    'id' => $c->id,
-                    'operation_type_id' => $c->operation_type_id,
-                    'name' => $c->name,
-                ],
-            );
-
-        $userId = Auth::id();
-
-        // 1. Obter todas as contas ativas do utilizador
-        $accounts = AccountBalance::where('user_id', $userId)
-            ->where('is_active', true)
-            ->get();
-
-        // 2. Calcular saldos
-        $totalBalance = $accounts->sum('current_balance');
-        $personalBalance = $accounts->where('account_type', 'personal')->sum('current_balance');
-        $businessBalance = $accounts->where('account_type', 'business')->sum('current_balance');
-
-        // 3. Obter transações recentes (mantendo a lógica original, mas filtrando por user_id)
-        $transactions = DB::table('app_bank_manager_transactions')
-            ->join('app_bank_manager_operation_categories', 'app_bank_manager_operation_categories.id', '=', 'app_bank_manager_transactions.operation_category_id')
-            ->join('app_bank_manager_account_balances', 'app_bank_manager_account_balances.id', '=', 'app_bank_manager_transactions.account_balance_id')
-            ->select(
-                'app_bank_manager_transactions.*',
-                'app_bank_manager_operation_categories.name as category_name',
-                'app_bank_manager_account_balances.user_id'
-            )
-            ->where('app_bank_manager_account_balances.user_id', $userId) // Filtrar por utilizador
-            ->orderByDesc('app_bank_manager_transactions.created_at')
-            ->limit(10)
-            ->get();
-
-        // Retorna a view com os dados
-        return view('bankmanager::dashboard.index', [
-            'accounts' => $accounts,
-            'transactions' => $transactions,
-            'totalBalance' => $totalBalance,
-            'personalBalance' => $personalBalance,
-            'businessBalance' => $businessBalance,
-            'operationTypes' => $operationTypes,
-            'operationCategories' => $operationCategories,
-            'operationCategoriesFilter' => $operationCategoriesFilter,
-        ]);
-    }
-
     public function storeOperationCategory(Request $request)
     {
         $request->validate([
-            'operation_type' => 'required|in:income,expense',
             'name' => 'required|string|max:255',
         ]);
 
-        // Procura o tipo correto (income ou expense) na tabela de tipos
-        $operationType = OperationType::where('operation_type', $request->operation_type)->first();
-
-        if (!$operationType) {
-            return redirect()->back()->withErrors('Tipo de operação não encontrado.')->withInput();
-        }
-
-        // Agora cria a categoria
         OperationCategory::create([
-            'operation_type_id' => $operationType->id,
             'name' => $request->name,
         ]);
 
-        return redirect()->back()->with('success', 'Categoria criada com sucesso!');
+        return back()->with('success', 'Categoria criada com sucesso!');
+    }
+
+    public function storeOperationSubCategory(Request $request)
+    {
+        $request->validate([
+            'operation_category_id' => 'required|exists:app_bank_manager_operation_categories,id',
+            'name' => 'required|string|max:255',
+        ]);
+
+        OperationSubCategory::create([
+            'operation_category_id' => $request->operation_category_id,
+            'name' => $request->name,
+        ]);
+
+        return back()->with('success', 'Subcategoria criada com sucesso!');
     }
 
     public function storeTransaction(Request $request)
     {
         $request->validate([
-            'account_balance_id' => 'required|exists:app_bank_manager_account_balances,id',
-            'operation_category_id' => 'required|exists:app_bank_manager_operation_categories,id',
-            'amount' => 'required|numeric|min:0.01',
+            'account_balance_id'        => 'required|exists:app_bank_manager_account_balances,id',
+            'operation_sub_category_id' => 'required|exists:app_bank_manager_operation_sub_categories,id',
+            'operation_type_id'         => 'required|exists:app_bank_manager_operation_types,id',
+            'amount'                    => 'required|numeric|min:0.01',
         ]);
 
-        $category = OperationCategory::with('operationType')->findOrFail($request->operation_category_id);
+        $operationType = OperationType::findOrFail($request->operation_type_id);
 
-        $type = $category->operationType->operation_type; // 'income' ou 'expense'
-
-        // Cria a transação
         Transaction::create([
-            'account_balance_id' => $request->account_balance_id,
-            'operation_category_id' => $request->operation_category_id,
-            'amount' => $request->amount,
+            'account_balance_id'        => $request->account_balance_id,
+            'operation_sub_category_id' => $request->operation_sub_category_id,
+            'operation_type_id'         => $operationType->id,
+            'amount'                    => $request->amount,
         ]);
 
-        // Atualiza o saldo
-        $balance = AccountBalance::where('user_id', Auth::id())->findOrFail($request->account_balance_id);
+        $balance = AccountBalance::where('user_id', Auth::id())
+            ->findOrFail($request->account_balance_id);
 
-        if ($type === 'income') {
+        if ($operationType->operation_type === 'income') {
             $balance->current_balance += $request->amount;
-        } elseif ($type === 'expense') {
+        } else {
             $balance->current_balance -= $request->amount;
         }
 
         $balance->save();
 
-        return redirect()->back()->with('success', 'Transação registrada com sucesso!');
+        return back()->with('success', 'Transação registrada com sucesso!');
     }
 
+    //API to DataTables
     public function receiveAllTransactions(Request $request)
     {
         $tz = config('app.timezone', 'Europe/Lisbon');
         $now = Carbon::now($tz);
 
-        // Filtro padrão: mês atual
         $defaultMonth = $now->month;
-        $defaultYear = $now->year;
+        $defaultYear  = $now->year;
 
-        $query = Transaction::with(['operationCategory.operationType', 'description'])->select('app_bank_manager_transactions.*');
+        // Agora carregamos TUDO o que precisamos
+        $query = Transaction::with([
+            'operationSubCategory.operationCategory',
+            'accountBalance',
+            'operationType'
+        ]);
 
-        // Se o front não enviar "month", usamos o mês atual
-        $year = (int) ($request->year ?? $defaultYear);
+        $year  = (int) ($request->year  ?? $defaultYear);
         $month = (int) ($request->month ?? $defaultMonth);
 
-        //  Filtro base (sempre restringe ao mês em questão)
-        $query->whereMonth('created_at', $month)->whereYear('created_at', $year);
+        $query->whereMonth('created_at', $month)
+            ->whereYear('created_at', $year);
 
-        // Se também tiver semana
+        // Filtro semana
         if ($request->filled('week')) {
+
             $startOfMonth = now()->setYear($year)->setMonth($month)->startOfMonth();
             $week = (int) $request->week;
 
             $weekStart = $startOfMonth->copy()->addDays(($week - 1) * 7);
-            $weekEnd = $weekStart->copy()->addDays(6)->endOfDay();
+            $weekEnd   = $weekStart->copy()->addDays(6)->endOfDay();
 
             $endOfMonth = $startOfMonth->copy()->endOfMonth();
-            if ($weekEnd->gt($endOfMonth)) {
-                $weekEnd = $endOfMonth;
-            }
+            if ($weekEnd->gt($endOfMonth)) $weekEnd = $endOfMonth;
 
             $query->whereBetween('created_at', [$weekStart, $weekEnd]);
 
-            // Se também tiver dia
             if ($request->filled('day')) {
                 $query->whereDay('created_at', (int) $request->day);
             }
         }
 
-        // Filtro por tipo (mantém tua lógica)
+        // Filtro tipo
         if ($request->filled('tipo')) {
-            $tipo = $request->tipo;
-
-            $query->whereHas('operationCategory', function ($q) use ($tipo) {
-                if ($tipo === 'Despesa Fixa') {
-                    $q->where('name', 'like', '%Fixed_Expenses%');
-                } elseif ($tipo === 'Investimento') {
-                    $q->where('name', 'like', '%Investimentos%');
-                } elseif ($tipo === 'Meta') {
-                    $q->where('name', 'like', '%Metas%');
-                } elseif ($tipo === 'Receita') {
-                    $q->where('name', 'like', '%Income%');
-                } elseif ($tipo === 'Despesa') {
-                    $q->where('name', 'like', '%Expenses%');
-                } elseif ($tipo === 'Despesa Comum') {
-                    // Exclui os tipos especiais
-                    $q->whereNotIn('name', ['Fixed_Expenses', 'Investimentos_Expenses', 'Metas_Expenses', 'Investimentos_Income', 'Metas_Income']);
+            $query->whereHas('operationType', function ($q) use ($request) {
+                if ($request->tipo === 'Receita') {
+                    $q->where('operation_type', 'income');
+                } elseif ($request->tipo === 'Despesa') {
+                    $q->where('operation_type', 'expense');
                 }
             });
         }
 
+        // Filtro categoria (categoria pai)
+        if ($request->filled('categoria')) {
+            $query->whereHas('operationSubCategory', function ($q) use ($request) {
+                $q->where('operation_category_id', $request->categoria);
+            });
+        }
+
+        // Filtro subcategoria
+        if ($request->filled('subcategoria')) {
+            $query->where('operation_sub_category_id', $request->subcategoria);
+        }
+
+
         return DataTables::eloquent($query)
-            ->addColumn('real_category_name', function ($transaction) {
-                if ($transaction->operationCategory?->name === 'Fixed_Expenses') {
-                    $fixedExpense = FixedExpense::where('amount', $transaction->amount)
-                        ->where('operation_category_id', $transaction->operation_category_id)
-                        ->whereDate('created_at', $transaction->created_at->toDateString())
-                        ->first();
 
-                    return $fixedExpense?->name . ' (Fixed_Expenses)' ?? 'Despesa Fixa';
-                }
+            // SUBCATEGORIA
+            ->addColumn(
+                'subcategoria',
+                fn($t) =>
+                $t->operationSubCategory?->name ?? '—'
+            )
 
-                return $transaction->description?->description ?? ($transaction->operationCategory->name ?? 'Sem categoria');
+            // CATEGORIA
+            ->addColumn(
+                'categoria',
+                fn($t) =>
+                $t->operationSubCategory?->operationCategory?->name ?? '—'
+            )
+
+            // BANCO
+            ->addColumn(
+                'bank_name',
+                fn($t) =>
+                $t->accountBalance?->bank_name ?? '—'
+            )
+
+            // TIPO DE CONTA
+            ->addColumn(
+                'account_type',
+                fn($t) =>
+                $t->accountBalance?->account_type ?? '—'
+            )
+
+            // VALOR
+            ->addColumn('formatted_amount', function ($t) {
+
+                $type = $t->operationType?->operation_type;
+
+                $sign  = $type === 'income' ? '+ ' : '- ';
+                $color = $type === 'income'
+                    ? 'style="color: green; font-weight:bold;"'
+                    : 'style="color: red; font-weight:bold;"';
+
+                return "<span {$color}>{$sign}€ " .
+                    number_format($t->amount, 2, ',', '.') .
+                    '</span>';
             })
 
-            ->addColumn('formatted_amount', function ($transaction) {
-                $type = $transaction->operationCategory?->operationType?->operation_type ?? 'unknown';
-                $sign = $type === 'income' ? '+ ' : '- ';
-                $color = $type === 'income' ? 'style="color: green; font-weight: bold;"' : 'style="color: red; font-weight: bold;"';
+            // DATA
+            ->addColumn(
+                'formatted_date',
+                fn($t) =>
+                $t->created_at->format('d/m/Y')
+            )
 
-                return "<span {$color}>{$sign}€ " . number_format($transaction->amount, 2, ',', '.') . '</span>';
-            })
-            ->addColumn('formatted_date', fn($t) => $t->created_at->format('d/m/Y'))
+            // TIPO (Receita / Despesa)
+            ->addColumn(
+                'tipo',
+                fn($t) =>
+                $t->operationType?->operation_type === 'income'
+                    ? 'Receita'
+                    : 'Despesa'
+            )
 
-            ->addColumn('tipo', function ($t) {
-                $name = $t->operationCategory?->name ?? '';
-                return match (true) {
-                    str_contains($name, 'Fixed_Expenses') => 'Despesa Fixa',
-                    str_contains($name, 'Investimentos') => 'Investimento',
-                    str_contains($name, 'Metas') => 'Meta',
-                    str_contains($name, 'Income') => 'Receita',
-                    str_contains($name, 'Expenses') => 'Despesa',
-                    default => 'Despesa Comum',
-                };
-            })
-            ->filterColumn('real_category_name', function ($query, $keyword) {
-                $query->whereHas('operationCategory', fn($q) => $q->where('name', 'like', "%{$keyword}%"))->orWhereHas('description', fn($q) => $q->where('description', 'like', "%{$keyword}%"));
-            })
             ->rawColumns(['formatted_amount'])
             ->make(true);
+    }
+
+
+
+    public function settings()
+    {
+        $categories = OperationCategory::orderBy('name')->get();
+        $subcategories = OperationSubCategory::with('operationCategory')
+            ->orderBy('name')
+            ->get();
+
+        return view('bankmanager::settings', compact('categories', 'subcategories'));
+    }
+
+    //API to seetings - Get Subcategories by Category
+    public function getSubcategories($categoryId)
+    {
+        $sub = OperationSubCategory::where('operation_category_id', $categoryId)
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($sub);
+    }
+
+    public function updateCategory(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $category = OperationCategory::findOrFail($id);
+        $category->name = $request->name;
+        $category->save();
+
+        return back()->with('success', 'Categoria atualizada com sucesso!');
+    }
+
+    public function updateSubCategory(Request $request, $id)
+    {
+        $request->validate([
+            'operation_category_id' => 'required|exists:app_bank_manager_operation_categories,id',
+            'name' => 'required|string|max:255',
+        ]);
+
+        $sub = OperationSubCategory::findOrFail($id);
+        $sub->operation_category_id = $request->operation_category_id;
+        $sub->name = $request->name;
+        $sub->save();
+
+        return back()->with('success', 'Subcategoria atualizada com sucesso!');
+    }
+
+    public function deleteCategory($id)
+    {
+        $category = OperationCategory::findOrFail($id);
+
+        // verificar se existe transação usando subcategorias desta categoria
+        $hasTransactions = Transaction::whereHas('operationSubCategory', function ($q) use ($id) {
+            $q->where('operation_category_id', $id);
+        })->exists();
+
+        if ($hasTransactions) {
+            return back()->with('error', 'Não é possível apagar: existem transações usando esta categoria.');
+        }
+
+        // delete subcategorias
+        OperationSubCategory::where('operation_category_id', $id)->delete();
+
+        // delete categoria
+        $category->delete();
+
+        return back()->with('success', 'Categoria apagada com sucesso.');
+    }
+
+
+    public function deleteSubCategory($id)
+    {
+        $sub = OperationSubCategory::findOrFail($id);
+
+        $hasTransactions = Transaction::where('operation_sub_category_id', $id)->exists();
+
+        if ($hasTransactions) {
+            return back()->with('error', 'Não é possível apagar: existem transações usando esta subcategoria.');
+        }
+
+        $sub->delete();
+
+        return back()->with('success', 'Subcategoria apagada com sucesso.');
     }
 }

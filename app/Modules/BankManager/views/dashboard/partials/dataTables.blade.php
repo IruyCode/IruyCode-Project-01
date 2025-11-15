@@ -1,7 +1,7 @@
  <div class="w-full py-6 flex-1">
      <div class="bg-black rounded-xl shadow p-2 md:p-4">
          <h2 class="text-lg font-semibold mb-4 text-white text-center md:text-left">
-             Transaçõesssss
+             Transações
          </h2>
 
          <!-- Filtros -->
@@ -43,12 +43,30 @@
                  <select id="filter-tipo"
                      class="w-full px-3 py-2 rounded border border-gray-600 bg-gray-900 text-gray-200">
                      <option value="">Todos</option>
-                     <option value="Despesa Fixa">Despesa Fixa</option>
-                     <option value="Investimento">Investimento</option>
-                     <option value="Meta">Meta</option>
                      <option value="Receita">Receita</option>
                      <option value="Despesa">Despesa</option>
-                     <option value="Despesa Comum">Despesa Comum</option>
+                 </select>
+             </div>
+
+             <!-- Filtro Categoria -->
+             <div>
+                 <label class="block text-xs text-gray-400 mb-1">Categoria</label>
+                 <select id="filter-categoria"
+                     class="w-full px-3 py-2 rounded border border-gray-600 bg-gray-900 text-gray-200">
+                     <option value="">Todas</option>
+
+                     @foreach ($operationCategories as $cat)
+                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                     @endforeach
+                 </select>
+             </div>
+
+             <!-- Filtro Subcategoria -->
+             <div>
+                 <label class="block text-xs text-gray-400 mb-1">Subcategoria</label>
+                 <select id="filter-subcategoria"
+                     class="w-full px-3 py-2 rounded border border-gray-600 bg-gray-900 text-gray-200">
+                     <option value="">Todas</option>
                  </select>
              </div>
 
@@ -59,7 +77,10 @@
              <table id="TransactionsTable" class="min-w-full divide-y divide-gray-700 text-sm text-gray-200">
                  <thead class="bg-gray-800 text-gray-300">
                      <tr>
+                         <th class="px-3 py-2 text-left">Subcategoria</th>
                          <th class="px-3 py-2 text-left">Categoria</th>
+                         <th class="px-3 py-2 text-left">Banco</th>
+                         <th class="px-3 py-2 text-left">Tipo Conta</th>
                          <th class="px-3 py-2 text-left">Valor</th>
                          <th class="px-3 py-2 text-left">Data</th>
                          <th class="px-3 py-2 text-left">Tipo</th>
@@ -83,11 +104,26 @@
                      d.week = $('#filter-week').val();
                      d.day = $('#filter-day').val();
                      d.tipo = $('#filter-tipo').val();
+                     d.categoria = $('#filter-categoria').val();
+                     d.subcategoria = $('#filter-subcategoria').val();
                  }
+
              },
              columns: [{
-                     data: 'real_category_name',
-                     name: 'real_category_name'
+                     data: 'subcategoria',
+                     name: 'subcategoria'
+                 },
+                 {
+                     data: 'categoria',
+                     name: 'categoria'
+                 },
+                 {
+                     data: 'bank_name',
+                     name: 'bank_name'
+                 },
+                 {
+                     data: 'account_type',
+                     name: 'account_type'
                  },
                  {
                      data: 'formatted_amount',
@@ -173,6 +209,35 @@
          $('#filter-tipo').on('change', function() {
              table.ajax.reload();
          });
+
+
+         $('#filter-tipo').on('change', () => table.ajax.reload());
+
+         $('#filter-categoria').on('change', function() {
+
+             let categoryId = $(this).val();
+
+             // limpar subcategorias
+             $('#filter-subcategoria').empty().append('<option value="">Todas</option>');
+
+             if (categoryId !== "") {
+                 // buscar subcategorias via API JSON
+                 fetch(`/bank-manager/api/subcategories/${categoryId}`)
+                     .then(r => r.json())
+                     .then(data => {
+                         data.forEach(sub => {
+                             $('#filter-subcategoria').append(
+                                 `<option value="${sub.id}">${sub.name}</option>`
+                             );
+                         });
+                     });
+             }
+
+             table.ajax.reload();
+         });
+
+         $('#filter-subcategoria').on('change', () => table.ajax.reload());
+
 
      });
  </script>
