@@ -10,37 +10,55 @@ use App\Modules\BankManager\Controllers\DebtsController;
 use App\Modules\BankManager\Controllers\GoalController;
 use App\Modules\BankManager\Controllers\InvestmentController;
 use App\Modules\BankManager\Controllers\DashboardController;
+use App\Modules\BankManager\Controllers\ApiBankManagerController;
+use App\Modules\BankManager\Controllers\SettingsController;
+use App\Modules\BankManager\Controllers\OperationSubCategoryController;
+use App\Modules\BankManager\Controllers\OperationCategoryController;
+use App\Modules\BankManager\Controllers\AccountBalanceController;
 
 
 Route::prefix('bank-manager')
     ->name('bank-manager.')
     ->group(function () {
 
-        //API routes
-        Route::get('/api/receiveDataTableTransactions', [BankManagerController::class, 'receiveAllTransactions']);
-        Route::get('/api/subcategories/{category}', [BankManagerController::class, 'getSubcategories']);
-
         // View Settings
-        Route::get('/settings', [BankManagerController::class, 'settings'])->name('settings');
+        Route::get('/settings', [SettingsController::class, 'settings'])->name('settings');
 
         // View Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('index');
 
         // Transactions Routes
-        Route::post('/transactions', [BankManagerController::class, 'storeTransaction'])->name('transactions.store');
+        Route::post('/transactions', [TransactionController::class, 'storeTransaction'])->name('transactions.store');
 
-        // Categories and Subcategories Routes - Creation
-        Route::post('/operation-categories', [BankManagerController::class, 'storeOperationCategory'])->name('operation-categories.store');
-        Route::post('/operation-subcategories', [BankManagerController::class, 'storeOperationSubCategory'])->name('operation-subcategories.store');
-        // Categories and Subcategories Routes - Update
-        Route::post('/categories/update/{id}', [BankManagerController::class, 'updateCategory'])->name('bank-manager.category.update');
-        Route::post('/subcategories/update/{id}', [BankManagerController::class, 'updateSubCategory'])->name('bank-manager.subcategory.update');
+        // Operation Categories Routes
+        Route::prefix('categories')
+            ->name('categories.')
+            ->controller(OperationCategoryController::class)
+            ->group(function () {
+                Route::get('/store', 'storeOperationCategory')->name('store');
+                Route::get('/update/{id}', 'updateCategory')->name('update');
+                Route::get('/delete/{id}', 'deleteCategory')->name('delete');
+            });
 
-        Route::post('/categories/delete/{id}', [BankManagerController::class, 'deleteCategory']);
-        Route::post('/subcategories/delete/{id}', [BankManagerController::class, 'deleteSubCategory']);
+        // Operation SubCategories Routes
+        Route::prefix('subcategories')
+            ->name('subcategories.')
+            ->controller(OperationSubCategoryController::class)
+            ->group(function () {
+                Route::get('/store', 'storeOperationSubCategory')->name('store');
+                Route::get('/update/{id}', 'updateSubCategory')->name('update');
+                Route::get('/delete/{id}', 'deleteSubCategory')->name('delete');
+            });
 
-
-
+        // API Routes
+        Route::prefix('api')
+            ->name('api.')
+            ->controller(InvestmentController::class)
+            ->group(function () {
+                Route::get('/receiveDataTableTransactions', [ApiBankManagerController::class, 'receiveAllTransactions']);
+                Route::get('/subcategories/{category}', [ApiBankManagerController::class, 'getSubcategories']);
+            });
+        // Debtors Routes
         Route::prefix('debtors')
             ->name('debtors.')
             ->controller(DebtorsController::class)
@@ -53,6 +71,7 @@ Route::prefix('bank-manager')
                 Route::post('/{debtor}/adjust-value', 'adjustValueDebtor')->name('adjust-value');
             });
 
+        // Debts Routes
         Route::prefix('debts')
             ->name('debts.')
             ->controller(DebtsController::class)
@@ -69,6 +88,7 @@ Route::prefix('bank-manager')
                 Route::put('/{debt}/adjust', 'adjustDebtValue')->name('adjust');
             });
 
+        // Goals Routes
         Route::prefix('goals')
             ->name('goals.')
             ->controller(GoalController::class)
@@ -81,6 +101,7 @@ Route::prefix('bank-manager')
                 Route::put('/{goal}/adjust', 'adjustGoalValue')->name('adjust');
             });
 
+        // Investments Routes
         Route::prefix('investments')
             ->name('investments.')
             ->controller(InvestmentController::class)
@@ -97,7 +118,7 @@ Route::prefix('bank-manager')
         // Account Balances Routes
         Route::prefix('account-balances')
             ->name('account-balances.')
-            ->controller(BankManagerController::class)
+            ->controller(AccountBalanceController::class)
             ->group(function () {
                 Route::get('/', 'accountBalances')->name('index');
                 Route::post('/', 'storeAccountBalance')->name('store');

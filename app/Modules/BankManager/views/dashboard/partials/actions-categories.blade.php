@@ -57,7 +57,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('bank-manager.operation-categories.store') }}" method="POST">
+            <form action="{{ route('bank-manager.categories.store') }}" method="POST">
                 @csrf
 
                 <div class="mb-4">
@@ -94,7 +94,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('bank-manager.operation-subcategories.store') }}" method="POST">
+            <form action="{{ route('bank-manager.subcategories.store') }}" method="POST">
                 @csrf
 
                 <div class="mb-4">
