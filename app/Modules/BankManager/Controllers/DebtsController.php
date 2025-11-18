@@ -4,17 +4,18 @@ namespace App\Modules\BankManager\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 use App\Modules\BankManager\Models\Debts\Debt;
 use App\Modules\BankManager\Models\Debts\DebtInstallment;
-
 use App\Modules\BankManager\Models\Transaction;
 use App\Modules\BankManager\Models\TransactionDescription;
 use App\Modules\BankManager\Models\OperationCategory;
 use App\Modules\BankManager\Models\AccountBalance;
+use App\Modules\BankManager\Models\OperationSubCategory;
 
 use Carbon\Carbon;
-
 
 class DebtsController extends Controller
 {
@@ -24,7 +25,10 @@ class DebtsController extends Controller
     public function index()
     {
         $debts = Debt::with('installmentsList')->orderBy('created_at', 'desc')->get();
-        $accountBalance = AccountBalance::firstOrCreate(['id' => 1], ['balance' => 0]);
+
+        $user = Auth::user();
+
+        $accountBalance = AccountBalance::where('user_id', $user->id)->get();
 
         // Dividas e parcelas
         $totalDebt = Debt::sum('total_amount');
@@ -81,30 +85,32 @@ class DebtsController extends Controller
     }
 
 
-    public function markInstallmentAsPaid($installmentId)
+    public function markInstallmentAsPaid(DebtInstallment $installmentId, Request $request)
     {
-        $installment = DebtInstallment::with('debt')->findOrFail($installmentId);
-
         // Marca a parcela como paga
-        $installment->paid_at = now();
-        $installment->save();
+        $installmentId->paid_at = now();
+        $installmentId->save();
 
-        // Define a categoria da operação (pagamento de dívida = despesa)
-        $category = OperationCategory::where('name', 'Dívidas_Expenses')->firstOrFail();
+        // Categoria e subcategoria corretas
+        $category = OperationCategory::where('name', 'Debitos')->firstOrFail();
+        $subcategory = OperationSubCategory::where([
+            'name' => 'Dividas',
+            'operation_category_id' => $category->id
+        ])->firstOrFail();
 
-        // Cria a transação principal
-        $transaction = Transaction::create([
-            'account_balance_id' => 1,
-            'operation_category_id' => $category->id,
-            'amount' => $installment->amount,
+        // Transação de devolução
+        Transaction::create([
+            'description' => "{$installmentId->debt->name} (Divida)",
+            'account_balance_id' => $request->account_balance_id,
+            'operation_type_id' => 2, // expense
+            'operation_sub_category_id' => $subcategory->id,
+            'amount' => $installmentId->amount,
         ]);
-
-        // Cria descrição vinculada à transação
-        $debtName = $installment->debt->name ?? "Dívida #{$installment->debt_id}";
-        TransactionDescription::create([
-            'transaction_id' => $transaction->id,
-            'description' => "{$debtName} (Parcela paga - Debts_Expenses)",
-        ]);
+        
+        // Atualizar saldo
+        $account = AccountBalance::findOrFail($request->account_balance_id);
+        $account->current_balance -= $installmentId->amount;
+        $account->save();
 
         return redirect()->back()->with('success', 'Parcela paga com sucesso, Parabéns!');
     }

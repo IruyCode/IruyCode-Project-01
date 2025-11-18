@@ -12,16 +12,19 @@ use App\Modules\BankManager\Models\AccountBalance;
 use App\Modules\BankManager\Models\OperationCategory;
 use App\Modules\BankManager\Models\Transaction;
 use App\Modules\BankManager\Models\TransactionDescription;
+use App\Modules\BankManager\Models\OperationSubCategory;
+
+use Illuminate\Support\Facades\Auth;
+
 
 class GoalController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+        $accountBalance = AccountBalance::where('user_id', $user->id)->get();
         $goals = FinancialGoals::where('is_completed', false)->orderBy('deadline', 'asc')->get();
         $completedGoals = FinancialGoals::where('is_completed', true)->orderBy('completed_at', 'desc')->get();
-        $accountBalance = AccountBalance::firstOrCreate(['id' => 1], ['balance' => 0]);
-
-        // dd($completedGoals);
 
         return view('bankmanager::goals.index', compact('goals', 'completedGoals', 'accountBalance'));
     }
@@ -29,7 +32,6 @@ class GoalController extends Controller
     // Funcao para criar uma nova meta
     public function storeFinancialGoal(Request $request)
     {
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -49,17 +51,26 @@ class GoalController extends Controller
 
         // Se o usuário já colocou um valor inicial, registrar no saldo e na transação
         if (!empty($validated['current_amount']) && $validated['current_amount'] > 0) {
-            // Atualiza o saldo da conta
-            $account = AccountBalance::findOrFail(1);
-            $account->balance -= $validated['current_amount'];
-            $account->save();
+
+            $user = Auth::user();
 
             // Cria a transação correspondente
-            $category = OperationCategory::where('name', 'Metas_Expenses')->firstOrFail();
+            $category = OperationCategory::where('name', 'Metas')->firstOrFail();
+            $subcategory = OperationSubCategory::where([
+                'name' => 'Metas Ativas',
+                'operation_category_id' => $category->id
+            ])->firstOrFail();
+
+            // Atualiza o saldo da conta
+            $account = AccountBalance::where('user_id', $user->id)->first();
+            $account->current_balance -= $validated['current_amount'];
+            $account->save();
 
             Transaction::create([
+                'description' => "{$validated['name']} (Metas Ativas)",
                 'account_balance_id' => $account->id,
-                'operation_category_id' => $category->id,
+                'operation_type_id' => 2, // income
+                'operation_sub_category_id' => $subcategory->id,
                 'amount' => $validated['current_amount'],
             ]);
         }
@@ -107,6 +118,8 @@ class GoalController extends Controller
 
     public function destroyGoal(FinancialGoals $goal, Request $request)
     {
+        dd($request->all());
+
         try {
             $resgate = $request->input('resgate');
             $valorMeta = $goal->current_amount;
@@ -195,12 +208,6 @@ class GoalController extends Controller
             'operation_category_id' => $category->id,
             'amount' => $validated['amount'],
         ]);
-
-        // // Cria a descrição vinculada
-        // GoalTransaction::create([
-        //     'transaction_id' => 1,
-        //     'description' => "{$goal->name} ({$categoryName})",
-        // ]);
 
         // Atualiza o saldo da conta
         if ($category->operationType->operation_type === 'income') {

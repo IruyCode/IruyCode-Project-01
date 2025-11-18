@@ -78,6 +78,7 @@
                  <thead class="bg-gray-800 text-gray-300">
                      <tr>
                          <th class="px-3 py-2 text-left">Subcategoria</th>
+                         <th class="px-3 py-2 text-left">Descricao</th>
                          <th class="px-3 py-2 text-left">Categoria</th>
                          <th class="px-3 py-2 text-left">Banco</th>
                          <th class="px-3 py-2 text-left">Tipo Conta</th>
@@ -109,9 +110,14 @@
                  }
 
              },
-             columns: [{
+             columns: [
+                 {
                      data: 'subcategoria',
                      name: 'subcategoria'
+                 },
+                  {
+                     data: 'description',
+                     name: 'description'
                  },
                  {
                      data: 'categoria',

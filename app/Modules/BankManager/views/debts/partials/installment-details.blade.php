@@ -33,6 +33,16 @@
                 <form action="{{ route('bank-manager.debts.installments.markPaid', $nextInstallment->id) }}"
                     method="post">
                     @csrf
+
+                    <select name="account_balance_id" id="account_balance_id" required>
+                        @foreach ($accountBalance as $account)
+                            <option value="{{ $account->id }}">
+                                {{ $account->account_name }}({{ $account->bank_name }}) - Saldo:
+                                {{ number_format($account->current_balance, 2, ',', '.') }}
+                            </option>
+                        @endforeach
+                    </select>
+
                     <button type="submit"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap">
                         Pagar Esta Parcela

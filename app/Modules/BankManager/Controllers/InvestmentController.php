@@ -58,12 +58,7 @@ class InvestmentController extends Controller
                 'operation_category_id' => OperationCategory::where('name', 'Investimentos_Expenses')->first()->id,
                 'amount' => $validatedData['initial_amount'],
             ]);
-
-            // Cria a descrição associada à transação
-            TransactionDescription::create([
-                'transaction_id' => $transaction->id,
-                'description' => "{$investment->name} (Investimentos_Expenses)",
-            ]);
+           
         }
 
         return redirect()->back()->with('success', 'Investimento adicionado com sucesso!');
@@ -129,11 +124,7 @@ class InvestmentController extends Controller
                 'amount' => $valorInvestido,
             ]);
 
-            // Descrição dessa transação
-            TransactionDescription::create([
-                'transaction_id' => $transaction->id,
-                'description' => "{$investment->name} (Investimentos_Income - FINALIZADO)",
-            ]);
+           
         }
 
         // Marca todas as descrições antigas como finalizadas

@@ -35,9 +35,9 @@ Route::prefix('bank-manager')
             ->name('categories.')
             ->controller(OperationCategoryController::class)
             ->group(function () {
-                Route::get('/store', 'storeOperationCategory')->name('store');
-                Route::get('/update/{id}', 'updateCategory')->name('update');
-                Route::get('/delete/{id}', 'deleteCategory')->name('delete');
+                Route::post('/store', 'storeOperationCategory')->name('store');
+                Route::post('/update/{id}', 'updateCategory')->name('update');
+                Route::post('/delete/{id}', 'deleteCategory')->name('delete');
             });
 
         // Operation SubCategories Routes
@@ -45,15 +45,15 @@ Route::prefix('bank-manager')
             ->name('subcategories.')
             ->controller(OperationSubCategoryController::class)
             ->group(function () {
-                Route::get('/store', 'storeOperationSubCategory')->name('store');
-                Route::get('/update/{id}', 'updateSubCategory')->name('update');
-                Route::get('/delete/{id}', 'deleteSubCategory')->name('delete');
+                Route::post('/store', 'storeOperationSubCategory')->name('store');
+                Route::post('/update/{id}', 'updateSubCategory')->name('update');
+                Route::post('/delete/{id}', 'deleteSubCategory')->name('delete');
             });
 
         // API Routes
         Route::prefix('api')
             ->name('api.')
-            ->controller(InvestmentController::class)
+            ->controller(ApiBankManagerController::class)
             ->group(function () {
                 Route::get('/receiveDataTableTransactions', [ApiBankManagerController::class, 'receiveAllTransactions']);
                 Route::get('/subcategories/{category}', [ApiBankManagerController::class, 'getSubcategories']);

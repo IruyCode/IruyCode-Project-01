@@ -106,6 +106,16 @@
                     </div>
                 </div>
 
+                <select name="account_balance_id" id="account_balance_id">
+                    @foreach ($accountBalance as $account)
+                        <option value="{{ $account->id }}">
+                            {{ $account->account_name }}({{ $account->bank_name }}) - Saldo:
+                            {{ number_format($account->current_balance, 2, ',', '.') }}
+                        </option>
+                    @endforeach
+                </select>
+
+
                 <!-- Rodapé -->
                 <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" @click="showAddGoalModal = false"

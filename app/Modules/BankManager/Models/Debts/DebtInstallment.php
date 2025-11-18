@@ -33,4 +33,6 @@ class DebtInstallment extends Model
     {
         return !is_null($this->paid_at);
     }
+
+
 }

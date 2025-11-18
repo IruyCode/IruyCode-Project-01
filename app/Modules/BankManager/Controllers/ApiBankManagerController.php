@@ -86,6 +86,12 @@ class ApiBankManagerController extends Controller
                 fn($t) =>
                 $t->operationSubCategory?->name ?? '—'
             )
+            // DESCRIÇÃO
+            ->addColumn(
+                'description',
+                fn($t) =>
+                $t->description ?? '—'
+            )
 
             // CATEGORIA
             ->addColumn(

@@ -12,6 +12,8 @@ use App\Modules\BankManager\Models\Transaction;
 use App\Modules\BankManager\Models\TransactionDescription;
 use App\Modules\BankManager\Models\OperationCategory;
 use App\Modules\BankManager\Models\AccountBalance;
+use App\Modules\BankManager\Models\OperationSubCategory;
+use Illuminate\Support\Facades\Auth;
 
 
 class DebtorsController extends Controller
@@ -21,10 +23,9 @@ class DebtorsController extends Controller
      */
     public function index()
     {
+        $user = Auth::user();
         $debtors = Debtor::with('edits')->orderBy('created_at', 'desc')->get();
-        //Deve ser feito a partir de login futuramente 
-        $accountBalance = AccountBalance::firstOrCreate(['id' => 1], ['balance' => 0]);
-
+        $accountBalance = AccountBalance::where('user_id', $user->id)->get();
         $totalAmountOwed = Debtor::sum('amount');
         $totalAmountPaid = Debtor::where('is_paid', true)->sum('amount');
         $totalPendingAmount = Debtor::where('is_paid', false)->sum('amount');
@@ -132,41 +133,46 @@ class DebtorsController extends Controller
     {
         $debtor = Debtor::findOrFail($id);
 
-        TransactionDescription::where('description', "{$debtor->name} (Devedores_Income)")->update(['description' => "{$debtor->name} (Devedores_Income - FINALIZADO)"]);
+        // Apaga histórico associado
+        DebtorEdit::where('debtor_id', $debtor->id)->delete();
 
+        // Apenas exclui — sem atualizar transações
         $debtor->delete();
 
-        return redirect()->back()->with('success', 'Devedor deletado com sucesso.');
+        return redirect()->back()->with('success', 'Devedor apagado com sucesso.');
     }
+
 
     /**
      * Conclude the specified debtor and create a return transaction.
      */
-    public function concludeDebtor( Debtor $debtor)
+    public function concludeDebtor(Debtor $debtor, Request $request)
     {
+        // Marca como pago
+        $debtor->update([
+            'is_paid' => true,
+            'paid_at' => now()
+        ]);
 
-        //  Marca o devedor como concluído
-        $debtor->is_paid = true;
-        $debtor->paid_at = now();
-        $debtor->save(); // evento 'updated' no modelo fará a exclusão do histórico
+        // Categoria e subcategoria corretas
+        $category = OperationCategory::where('name', 'Debitos')->firstOrFail();
+        $subcategory = OperationSubCategory::where([
+            'name' => 'Devedores',
+            'operation_category_id' => $category->id
+        ])->firstOrFail();
 
-        // Cria a transação de retorno do valor
-        $category = OperationCategory::where('name', 'Devedores_Income')->firstOrFail();
-
-        $transaction = Transaction::create([
-            'operation_category_id' => $category->id,
+        // Transação de devolução
+        Transaction::create([
+            'description' => "{$debtor->name} (Devolução)",
+            'account_balance_id' => $request->account_balance_id,
+            'operation_type_id' => 1, // income
+            'operation_sub_category_id' => $subcategory->id,
             'amount' => $debtor->amount,
-            'account_balance_id' => 1, //alterar para pegar a conta do usuário logado futuramente
         ]);
 
-        TransactionDescription::create([
-            'transaction_id' => $transaction->id,
-            'description' => "{$debtor->name} (Devedores_Income)",
-        ]);
-
-        // Atualiza o saldo da conta
-        $account = AccountBalance::firstOrCreate(['id' => 1], ['balance' => 0]);
-        $account->balance += $debtor->amount;
+        // Atualizar saldo
+        $account = AccountBalance::findOrFail($request->account_balance_id);
+        $account->current_balance += $debtor->amount;
         $account->save();
 
         return redirect()->back()->with('success', 'Devedor concluído e valor devolvido com sucesso.');
