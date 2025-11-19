@@ -13,18 +13,19 @@
             </button>
         </div>
 
-        <form method="POST" action="{{ route('bank-manager.goals.adjust', $goal->id) }}">
+        <form method="POST" action="{{ route('bank-manager.goals.adjust', $goal->id) }}" x-data="{ adjustmentType: '', adjustmentAmount: 0 }">
             @csrf
             @method('PUT')
 
+            <!-- Tipo de Ajuste -->
             <div class="mb-4">
-                <label class="block text-gray-700 dark:text-gray-300 mb-2">Tipo de
-                    Ajuste</label>
+                <label class="block text-gray-700 dark:text-gray-300 mb-2">Tipo de Ajuste</label>
                 <div class="flex space-x-4">
                     <label class="inline-flex items-center">
                         <input type="radio" x-model="adjustmentType" value="add" class="form-radio text-blue-600">
                         <span class="ml-2 dark:text-gray-300">Adicionar</span>
                     </label>
+
                     <label class="inline-flex items-center">
                         <input type="radio" x-model="adjustmentType" value="remove" class="form-radio text-blue-600">
                         <span class="ml-2 dark:text-gray-300">Remover</span>
@@ -32,6 +33,7 @@
                 </div>
             </div>
 
+            <!-- Valor -->
             <div class="mb-4">
                 <label for="amount" class="block text-gray-700 dark:text-gray-300 mb-2">Valor</label>
                 <input type="number" id="amount" name="amount" x-model="adjustmentAmount"
@@ -40,27 +42,58 @@
                 <input type="hidden" name="type" x-model="adjustmentType">
             </div>
 
+            <!-- SELECT DA CONTA (sempre necessário quando tipo é escolhido) -->
+            <div class="mb-4" x-show="adjustmentType !== ''" x-transition>
+                <label class="block text-gray-700 dark:text-gray-300 mb-2">
+                    Selecione a Conta
+                </label>
+
+                <select name="account_balance_id"
+                    class="w-full px-4 py-2 border rounded-lg 
+                dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required>
+
+                    @foreach ($accountBalance as $account)
+                        <option value="{{ $account->id }}">
+                            {{ $account->account_name }} ({{ $account->bank_name }}) — Saldo:
+                            {{ number_format($account->current_balance, 2, ',', '.') }}
+                        </option>
+                    @endforeach
+
+                </select>
+            </div>
+
+            <!-- Informação de totais -->
             <div class="mb-4">
                 <p class="text-sm text-gray-600 dark:text-gray-300">
                     Valor atual: €{{ number_format($goal->current_amount, 2) }}
                 </p>
-                <p class="text-sm text-gray-600 dark:text-gray-300" x-show="adjustmentAmount > 0">
+
+                <p class="text-sm text-gray-600 dark:text-gray-300"
+                    x-show="adjustmentAmount > 0 && adjustmentType !== ''">
                     Novo valor:
                     <span
-                        x-text="'€' + ({{ $goal->current_amount }} + (adjustmentType === 'add' ? +adjustmentAmount : -adjustmentAmount)).toFixed(2)"></span>
+                        x-text="'€' + ({{ $goal->current_amount }} + (adjustmentType === 'add' ? +adjustmentAmount : -adjustmentAmount)).toFixed(2)">
+                    </span>
                 </p>
             </div>
 
+            <!-- Botões -->
             <div class="flex justify-end space-x-3">
                 <button type="button" @click="closeAdjustValueModal()"
-                    class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
+                    class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 
+                   dark:bg-gray-600 dark:hover:bg-gray-500">
                     Cancelar
                 </button>
+
                 <button type="submit"
-                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600">
+                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 
+                   dark:bg-purple-500 dark:hover:bg-purple-600">
                     Aplicar Ajuste
                 </button>
             </div>
+
         </form>
+
     </div>
 </div>

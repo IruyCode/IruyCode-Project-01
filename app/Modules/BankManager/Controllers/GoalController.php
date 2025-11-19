@@ -81,85 +81,81 @@ class GoalController extends Controller
     // Atualiza a Meta Financeira
     public function updateGoal(Request $request, FinancialGoals $goal)
     {
-        // valida apenas se o campo vier preenchido
-        $validatedData = $request->validate([
-            'name' => 'nullable|string|max:255',
+        // Valida apenas o que for enviado
+        $validated = $request->validate([
+            'name'          => 'nullable|string|max:255',
             'target_amount' => 'nullable|numeric|min:0',
-            'deadline' => 'nullable|date',
+            'deadline'      => 'nullable|date',
         ]);
 
-        try {
-            $oldName = $goal->name;
+        // Atualiza somente os campos enviados
+        $goal->update([
+            'name'          => $validated['name']          ?? $goal->name,
+            'target_amount' => $validated['target_amount'] ?? $goal->target_amount,
+            'deadline'      => $validated['deadline']      ?? $goal->deadline,
+        ]);
 
-            // substitui apenas o que foi enviado, mantendo o resto igual
-            $goal->update([
-                'name' => $validatedData['name'] ?? $goal->name,
-                'target_amount' => $validatedData['target_amount'] ?? $goal->target_amount,
-                'deadline' => $validatedData['deadline'] ?? $goal->deadline,
-            ]);
-
-            // atualiza descrições relacionadas
-            $categories = ['Metas_Expenses', 'Metas_Income'];
-
-            foreach ($categories as $categoryName) {
-                TransactionDescription::where('description', "{$oldName} ({$categoryName})")->update([
-                    'description' => "{$goal->name} ({$categoryName})",
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Meta atualizada com sucesso!');
-        } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->with('error', 'Erro ao atualizar meta: ' . $e->getMessage());
-        }
+        return redirect()
+            ->back()
+            ->with('success', 'Meta atualizada com sucesso!');
     }
 
 
     public function destroyGoal(FinancialGoals $goal, Request $request)
     {
-        dd($request->all());
+        $action = $request->input('resgate');
+        $valorAtual = $goal->current_amount;
 
-        try {
-            $resgate = $request->input('resgate');
-            $valorMeta = $goal->current_amount;
+        /**
+         * 1) APENAS APAGAR A META
+         */
+        if ($action == 'delete') {
+            $goal->delete();
+            return back()->with('success', 'Meta excluída com sucesso.');
+        }
 
-            // Se a opção for devolver o dinheiro, adiciona à Conta Ordem e cria uma transação
-            if ($resgate === 'return' && $valorMeta > 0) {
-                $account = AccountBalance::firstOrCreate(['id' => 1], ['balance' => 0]);
-                $account->balance += $valorMeta;
-                $account->save();
+        /**
+         * 2) DEVOLVER VALOR PARA A CONTA
+         */
+        if ($action == 'return') {
 
-                $category = OperationCategory::where('name', 'Metas_Income')->first();
-                $transaction = Transaction::create([
-                    'operation_category_id' => $category->id,
-                    'amount' => $valorMeta,
-                ]);
-
-                // Cria descrição dessa transação de resgate
-                TransactionDescription::create([
-                    'transaction_id' => $transaction->id,
-                    'description' => "{$goal->name} (Metas_Income - FINALIZADA)",
-                ]);
+            //Verificar a conta selecionada
+            if (!$request->filled('account_balance_id')) {
+                return back()->with('error', 'Selecione uma conta para receber o valor.');
             }
 
-            // Atualiza descrições antigas para indicar que a meta foi finalizada
-            $categories = ['Metas_Expenses', 'Metas_Income'];
-            foreach ($categories as $categoryName) {
-                TransactionDescription::where('description', "{$goal->name} ({$categoryName})")->update([
-                    'description' => "{$goal->name} ({$categoryName} - FINALIZADA)",
-                ]);
+            $conta = AccountBalance::findOrFail($request->account_balance_id);
+
+            // 1. Devolver o valor
+            if ($valorAtual > 0) {
+                $conta->current_balance += $valorAtual;
+                $conta->save();
             }
 
-            // Soft delete (mantém histórico)
+            // 2. Categoria/Subcategoria corretas
+            $categoria = OperationCategory::where('name', 'Metas')->firstOrFail();
+            $subcategoria = OperationSubCategory::where([
+                'name' => 'Metas Ativas',
+                'operation_category_id' => $categoria->id,
+            ])->firstOrFail();
+
+            // 3. Criar a transação
+            Transaction::create([
+                'description'               => "{$goal->name} (Meta Cancelada)",
+                'account_balance_id'        => $conta->id,
+                'operation_type_id'         => 1, // Income 
+                'operation_sub_category_id' => $subcategoria->id,
+                'amount'                    => $valorAtual,
+            ]);
+
+            // 4. Só agora apagamos a meta
             $goal->delete();
 
-            return redirect()->back()->with('success', 'Meta excluída com sucesso!');
-        } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->with('error', 'Erro ao excluir meta: ' . $e->getMessage());
+            return back()->with('success', 'Meta excluída e valor devolvido com sucesso.');
         }
+
+
+        return back()->with('error', 'Ação inválida.');
     }
 
     // Finaliza uma meta
@@ -175,63 +171,81 @@ class GoalController extends Controller
 
     public function adjustGoalValue(FinancialGoals $goal, Request $request)
     {
+        // 1. Validação
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'type' => 'required|in:add,remove',
+            'account_balance_id' => 'required|exists:app_bank_manager_account_balances,id',
         ]);
 
-        // Definir a categoria baseada no tipo da operação
-        $categoryName = $validated['type'] === 'add' ? 'Metas_Expenses' : 'Metas_Income';
+        $amount = $validated['amount'];
+        $type   = $validated['type'];
 
-        $category = OperationCategory::with('operationType')->where('name', $categoryName)->firstOrFail();
+        // 2. Conta selecionada
+        $conta = AccountBalance::findOrFail($validated['account_balance_id']);
 
-        // Busca o saldo atual
-        $balance = AccountBalance::firstOrCreate(['id' => 1]);
-
-        // Verificação 1: Se for ADD (tirar da conta), verifica se há saldo suficiente
-        if ($validated['type'] === 'add' && $balance->balance < $validated['amount']) {
-            return redirect()
-                ->back()
-                ->withErrors(['amount' => 'Saldo insuficiente na conta principal para essa operação.']);
+        // 3. Regras de negócio
+        if ($type === 'add') {
+            // Tirar da conta → Aumentar meta
+            if ($conta->current_balance < $amount) {
+                return back()->withErrors(['amount' => 'Saldo insuficiente na conta selecionada.']);
+            }
         }
 
-        // Verificação 2: Se for REMOVE (tirar da meta), verifica se há saldo suficiente na meta
-        if ($validated['type'] === 'remove' && $goal->current_amount < $validated['amount']) {
-            return redirect()
-                ->back()
-                ->withErrors(['amount' => 'A meta não possui esse valor para ser removido.']);
+        if ($type === 'remove') {
+            // Tirar da meta → Devolver à conta
+            if ($goal->current_amount < $amount) {
+                return back()->withErrors(['amount' => 'A meta não possui esse valor disponível.']);
+            }
         }
 
-        // Cria a transação principal
+        // 4. Categoria / Subcategoria
+        // (Tu ajustas estes nomes conforme tua estrutura real)
+        $categoria = OperationCategory::where('name', 'Metas')->firstOrFail();
+
+        $subcategoriaName = $type === 'add' ? 'Aporte' : 'Retirada';
+
+        $subcategoria = OperationSubCategory::where([
+            'name' => $subcategoriaName,
+            'operation_category_id' => $categoria->id,
+        ])->firstOrFail();
+
+        // 5. Criar transação
+        $operationTypeId = $type === 'add'
+            ? 2 // expense
+            : 1; // income
+
         Transaction::create([
-            'account_balance_id' => $balance->id,
-            'operation_category_id' => $category->id,
-            'amount' => $validated['amount'],
+            'description'               => "{$goal->name} - Ajuste de Meta ({$subcategoriaName})",
+            'account_balance_id'        => $conta->id,
+            'operation_type_id'         => $operationTypeId,
+            'operation_sub_category_id' => $subcategoria->id,
+            'amount'                    => $amount,
         ]);
 
-        // Atualiza o saldo da conta
-        if ($category->operationType->operation_type === 'income') {
-            $balance->balance += $validated['amount'];
-        } elseif ($category->operationType->operation_type === 'expense') {
-            $balance->balance -= $validated['amount'];
-        }
-        $balance->save();
-
-        // Atualiza o valor da meta
-        if ($validated['type'] === 'add') {
-            $goal->current_amount += $validated['amount'];
+        // 6. Atualizar conta
+        if ($type === 'add') {
+            $conta->current_balance -= $amount;
         } else {
-            $goal->current_amount -= $validated['amount'];
+            $conta->current_balance += $amount;
+        }
+        $conta->save();
+
+        // 7. Atualizar meta
+        if ($type === 'add') {
+            $goal->current_amount += $amount;
+        } else {
+            $goal->current_amount -= $amount;
         }
         $goal->save();
 
-        // Cria o registro no histórico da meta
+        // 8. Histórico
         GoalTransaction::create([
-            'goal_id' => $goal->id,
-            'type' => $validated['type'] === 'add' ? 'aporte' : 'retirada',
-            'amount' => $validated['amount'],
-            'note' => 'Movimentação registrada automaticamente',
-            'performed_at' => now(),
+            'goal_id'       => $goal->id,
+            'type'          => $type === 'add' ? 'aporte' : 'retirada',
+            'amount'        => $amount,
+            'note'          => 'Movimentação registrada automaticamente',
+            'performed_at'  => now(),
         ]);
 
         return redirect()->back()->with('success', 'Valor da meta atualizado com sucesso!');

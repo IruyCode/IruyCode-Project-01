@@ -90,30 +90,49 @@
                                                 dark:bg-gray-700 dark:text-white transition-all">
                 </div>
 
-                <!-- Valor Atual -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Valor Já Poupado (€) (Opcional)
-                    </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500 dark:text-gray-400">€</span>
+                <div x-data="{ currentAmount: '' }">
+
+                    <!-- Valor Atual -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Valor Já Poupado (€) (Opcional)
+                        </label>
+
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 dark:text-gray-400">€</span>
+                            </div>
+
+                            <input type="number" name="current_amount" step="0.01" min="0" placeholder="0,00"
+                                x-model="currentAmount"
+                                class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                       dark:bg-gray-700 dark:text-white transition-all">
                         </div>
-                        <input type="number" name="current_amount" step="0.01" min="0" placeholder="0,00"
-                            class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                                dark:bg-gray-700 dark:text-white transition-all">
                     </div>
+
+                    <!-- Select da Conta (só aparece se currentAmount tiver valor) -->
+                    <div x-show="parseFloat(currentAmount) > 0" x-transition>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-3">
+                            Escolha a Conta para Devolver o Valor
+                        </label>
+
+                        <select name="account_balance_id" id="account_balance_id"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                            dark:bg-gray-700 dark:text-white">
+
+                            @foreach ($accountBalance as $account)
+                                <option value="{{ $account->id }}">
+                                    {{ $account->account_name }} ({{ $account->bank_name }}) — Saldo:
+                                    {{ number_format($account->current_balance, 2, ',', '.') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                 </div>
 
-                <select name="account_balance_id" id="account_balance_id">
-                    @foreach ($accountBalance as $account)
-                        <option value="{{ $account->id }}">
-                            {{ $account->account_name }}({{ $account->bank_name }}) - Saldo:
-                            {{ number_format($account->current_balance, 2, ',', '.') }}
-                        </option>
-                    @endforeach
-                </select>
+
 
 
                 <!-- Rodapé -->

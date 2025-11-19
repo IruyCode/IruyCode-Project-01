@@ -9,7 +9,7 @@
             <strong>{{ $goal->name }}</strong> será permanentemente removida.
         </p>
 
-        <form method="POST" action="{{ route('bank-manager.goals.destroy', $goal->id) }}">
+        <form method="POST" action="{{ route('bank-manager.goals.destroy', $goal->id) }}" x-data="{ resgate: 'delete' }">
             @csrf
             @method('DELETE')
 
@@ -17,11 +17,28 @@
                 O que deseja fazer com o valor atual da meta?
             </label>
 
-            <select name="resgate" id="resgate" required
+            <select name="resgate" id="resgate" required x-model="resgate"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm mb-6 dark:bg-gray-700 dark:text-white">
                 <option value="return">Devolver para a Conta Ordem</option>
                 <option value="delete">Excluir com a meta</option>
             </select>
+
+            <!-- MOSTRAR SOMENTE SE FOR 'return' -->
+            <div x-show="resgate === 'return'" x-transition>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Escolha a Conta para devolver o valor:
+                </label>
+
+                <select name="account_balance_id" id="account_balance_id"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm mb-6 dark:bg-gray-700 dark:text-white">
+                    @foreach ($accountBalance as $account)
+                        <option value="{{ $account->id }}">
+                            {{ $account->account_name }} ({{ $account->bank_name }})
+                            – Saldo: {{ number_format($account->current_balance, 2, ',', '.') }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
             <div class="flex justify-end space-x-3">
                 <button type="button" @click="closeDeleteModal()"
@@ -34,5 +51,6 @@
                 </button>
             </div>
         </form>
+
     </div>
 </div>

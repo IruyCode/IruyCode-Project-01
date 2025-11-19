@@ -202,34 +202,68 @@
                                         <div x-show="isExpanded({{ $investment->id }})" x-collapse.duration.300ms
                                             class="bg-gray-50 dark:bg-gray-700/30 px-6 py-4 border-t border-gray-200 dark:border-gray-600">
 
-                                            <!--Aporte ou Retirada -->
+                                            <!-- Aporte ou Retirada -->
                                             <div class="mb-6">
                                                 <h5 class="text-md font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                                    Aporte / Retirada</h5>
+                                                    Aporte / Retirada
+                                                </h5>
+
                                                 <form method="POST"
                                                     action="{{ route('bank-manager.investments.applyCashflow', $investment->id) }}">
                                                     @csrf
+
                                                     <div class="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label for="valor"
-                                                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor(€)
-                                                            </label>
-                                                            <input type="number" step="0.01" min="0"
-                                                                name="valor"
-                                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                                                                required>
-                                                        </div>
+
+                                                        <!-- Valor -->
                                                         <div>
                                                             <label
-                                                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
-                                                            <select name="tipo"
-                                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                                                                required>
+                                                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Valor (€)
+                                                            </label>
+                                                            <input type="number" step="0.01" min="0.01"
+                                                                name="valor" required
+                                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                                                                dark:bg-gray-700 dark:text-white">
+                                                        </div>
+
+                                                        <!-- Tipo -->
+                                                        <div>
+                                                            <label
+                                                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Tipo
+                                                            </label>
+                                                            <select name="tipo" required
+                                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                                                                dark:bg-gray-700 dark:text-white">
                                                                 <option value="aporte">Aporte</option>
                                                                 <option value="retirada">Retirada</option>
                                                             </select>
                                                         </div>
                                                     </div>
+
+                                                    <!-- SELECIONAR A CONTA -->
+                                                    <div class="mt-4">
+                                                        <label
+                                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Conta da Operação
+                                                        </label>
+
+                                                        <select name="account_balance_id" required
+                                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                                                            dark:bg-gray-700 dark:text-white">
+
+                                                            @foreach ($accountBalance as $account)
+                                                                <option value="{{ $account->id }}">
+                                                                    {{ $account->account_name }}
+                                                                    ({{ $account->bank_name }}) —
+                                                                    Saldo:
+                                                                    €{{ number_format($account->current_balance, 2, ',', '.') }}
+                                                                </option>
+                                                            @endforeach
+
+                                                        </select>
+                                                    </div>
+
                                                     <div class="mt-4 flex justify-end">
                                                         <button type="submit"
                                                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
@@ -321,7 +355,6 @@
 
                     <!-- Modal de Confirmação de Exclusão -->
                     @include('bankmanager::investments.partials.modals.modal-delete-investment')
-
                 @endforeach
 
             </div>
