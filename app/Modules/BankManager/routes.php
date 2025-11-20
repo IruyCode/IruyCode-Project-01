@@ -15,6 +15,7 @@ use App\Modules\BankManager\Controllers\SettingsController;
 use App\Modules\BankManager\Controllers\OperationSubCategoryController;
 use App\Modules\BankManager\Controllers\OperationCategoryController;
 use App\Modules\BankManager\Controllers\AccountBalanceController;
+use App\Modules\BankManager\Controllers\FixedExpenseController;
 
 
 Route::prefix('bank-manager')
@@ -124,5 +125,15 @@ Route::prefix('bank-manager')
                 Route::post('/', 'storeAccountBalance')->name('store');
                 Route::put('/{id}', 'updateAccountBalance')->name('update');
                 Route::delete('/{id}', 'deleteAccountBalance')->name('delete');
+            });
+
+        Route::prefix('fixed-expenses')
+            ->name('fixed-expenses.')
+            ->controller(FixedExpenseController::class)
+            ->group(function () {
+                Route::post('/createfixedExpense', 'createfixedExpense')->name('createfixedExpense');
+                Route::put('/mark-as-paid', 'markAsPaidFixedExpense')->name('markAsPaidFixedExpense');
+                Route::get('{expense}/edit', 'editExpense')->name('editExpense');
+                Route::delete('{expense}', 'destroyExpense')->name('destroyExpense');
             });
     });

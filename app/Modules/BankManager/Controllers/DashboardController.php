@@ -9,6 +9,8 @@ use App\Modules\BankManager\Models\AccountBalance;
 use App\Modules\BankManager\Models\OperationType;
 use App\Modules\BankManager\Models\OperationCategory;
 use App\Modules\BankManager\Models\OperationSubCategory;
+use App\Modules\BankManager\Models\FixedExpenses\FixedExpense;
+use App\Modules\BankManager\Models\FixedExpenses\FixedExpensePayment;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +58,7 @@ class DashboardController extends Controller
             ->orderByDesc('app_bank_manager_transactions.created_at')
             ->limit(10)
             ->get();
-
+            
         // Retorna a view com os dados
         return view('bankmanager::dashboard.index', [
             'accounts' => $accounts,
@@ -68,8 +70,10 @@ class DashboardController extends Controller
             'operationCategories' => $operationCategories,
             'operationSubCategories' => $operationSubCategories,
             'operationCategoriesFilter' => $operationCategoriesFilter,
+
+            'accountBalance'  => AccountBalance::where('user_id', $userId)->get(),
+            'fixedExpenses'   => FixedExpense::where('is_active', true)->get(),
+
         ]);
     }
-
-    
 }

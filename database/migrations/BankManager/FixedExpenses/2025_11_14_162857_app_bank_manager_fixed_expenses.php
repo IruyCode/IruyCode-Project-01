@@ -15,10 +15,15 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->decimal('amount', 10, 2);
-            $table->unsignedTinyInteger('due_day'); // 1 a 31
-            $table->foreignId('operation_category_id')->constrained('app_bank_manager_operation_categories')->onDelete('cascade');
+            $table->unsignedTinyInteger('due_day');
+            $table->unsignedBigInteger('operation_sub_category_id');
             $table->date('last_generated_at')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->foreign('operation_sub_category_id', 'fx_expenses_subcat_fk')
+                ->references('id')
+                ->on('app_bank_manager_operation_sub_categories')
+                ->onDelete('cascade');
         });
     }
 

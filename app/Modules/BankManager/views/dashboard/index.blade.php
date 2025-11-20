@@ -116,8 +116,10 @@
     </div>
 
 
+    @include('bankmanager::fixed-expenses.index')
+
+    <br>
     @include('bankmanager::dashboard.partials.actions-categories')
 
-   @include('bankmanager::dashboard.partials.dataTables')
-
+    @include('bankmanager::dashboard.partials.dataTables')
 @endsection

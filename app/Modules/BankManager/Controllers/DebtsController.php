@@ -159,11 +159,6 @@ class DebtsController extends Controller
                 'installments' => $newInstallmentsCount,
             ]);
 
-            // Atualiza descrições antigas
-            TransactionDescription::where('description', 'LIKE', "{$oldName} (Parcela paga - Debts_Expenses)")
-                ->update([
-                    'description' => "{$validated['name']} (Parcela paga - Debts_Expenses)",
-                ]);
 
             // Remove parcelas pendentes antigas
             $debt->installmentsList()->whereNull('paid_at')->delete();
@@ -223,18 +218,11 @@ class DebtsController extends Controller
                     'amount' => $totalPaid,
                 ]);
 
-                // Cria descrição para o refund
-                TransactionDescription::create([
-                    'transaction_id' => $transaction->id,
-                    'description' => "{$debt->name} (Dívidas_Income - FINALIZADA)",
-                ]);
+              
             }
         }
 
-        // Atualiza descrições antigas para indicar que a dívida foi finalizada
-        TransactionDescription::where('description', "{$debt->name} (Parcela paga - Debts_Expenses)")->update([
-            'description' => "{$debt->name} (Parcela paga - Debts_Expenses - FINALIZADA)",
-        ]);
+       
 
         // Exclui parcelas e dívida
         $debt->installmentsList()->delete();

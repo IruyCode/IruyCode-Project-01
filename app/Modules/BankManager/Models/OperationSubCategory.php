@@ -4,6 +4,9 @@ namespace App\Modules\BankManager\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Modules\BankManager\Models\FixedExpenses\FixedExpense;
+
+
 
 class OperationSubCategory extends Model
 {
@@ -23,4 +26,8 @@ class OperationSubCategory extends Model
         return $this->hasMany(Transaction::class, 'operation_sub_category_id');
     }
 
+    public function fixedExpenses()
+    {
+        return $this->hasMany(FixedExpense::class, 'operation_sub_category_id');
+    }
 }
