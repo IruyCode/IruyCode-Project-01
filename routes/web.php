@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckUserType;
 use App\Http\Controllers\UserController;
 
 require app_path('Modules/BankManager/routes.php');
+require app_path('Modules/Notifications/routes.php');
 
 
 

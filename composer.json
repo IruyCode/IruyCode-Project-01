@@ -28,7 +28,8 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
 
-            "App\\Modules\\BankManager\\": "app/Modules/BankManager/"
+            "App\\Modules\\BankManager\\": "app/Modules/BankManager/",
+            "App\\Modules\\Notifications\\": "app/Modules/Notifications/"
         }
     },
     "autoload-dev": {
